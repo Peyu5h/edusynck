@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid()) @map("_id")
+  name          String
+  email         String         @unique
+  password      String
+  role          UserRole       @default(STUDENT)
+  classNumber   String
+  class         Class          @relation(fields: [classId], references: [id])
+  classId       String
+  notifications Notification[]
+  assignments   Assignment[]
+  votedPolls    VotedPoll[]
+  createdPolls  Poll[]
+}
+
+model Class {
+  id            String         @id @default(cuid()) @map("_id")
+  name          String
+  classNumber   String         @unique
+  students      User[]
+  courses       Course[]
+  announcements Announcement[]
+}
+
+model Course {
+  id                String         @id @default(cuid()) @map("_id")
+  name              String
+  classId           String
+  class             Class          @relation(fields: [classId], references: [id])
+  assignments       Assignment[]
+  notifications     Notification[]
+  materials         Material[]
+  googleClassroomId String         @unique
+}
+
+model Assignment {
+  id          String   @id @default(cuid()) @map("_id")
+  title       String
+  description String
+  dueDate     DateTime
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id])
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  document    String
+}
+
+model Announcement {
+  id          String   @id @default(cuid()) @map("_id")
+  title       String
+  content     String
+  classId     String
+  class       Class    @relation(fields: [classId], references: [id])
+  createdAt   DateTime @default(now())
+  isImportant Boolean  @default(false)
+}
+
+model Notification {
+  id        String   @id @default(cuid()) @map("_id")
+  message   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Material {
+  id       String @id @default(cuid()) @map("_id")
+  name     String
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+  document String
+  category String
+}
+
+model Poll {
+  id         String      @id @default(cuid()) @map("_id")
+  question   String
+  options    String
+  votes      PollVote[]
+  votedPolls VotedPoll[]
+  createdBy  User        @relation(fields: [userId], references: [id])
+  userId     String
+  createdAt  DateTime    @default(now())
+}
+
+model PollVote {
+  id     String @id @default(cuid()) @map("_id")
+  pollId String
+  option String
+  poll   Poll   @relation(fields: [pollId], references: [id])
+}
+
+model VotedPoll {
+  id     String @id @default(cuid()) @map("_id")
+  userId String
+  pollId String
+  user   User   @relation(fields: [userId], references: [id])
+  poll   Poll   @relation(fields: [pollId], references: [id])
+}
+
+enum UserRole {
+  STUDENT
+  ADMIN
+  TEACHER
+}
