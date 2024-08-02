@@ -1,6 +1,7 @@
 import prisma from "../config/db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+
 import { loginSchema, registerSchema } from "../utils/Validation.js";
 
 export const register = async (req, res) => {
@@ -18,7 +19,7 @@ export const register = async (req, res) => {
     }
 
     const classExists = await prisma.class.findUnique({
-      where: { className },
+      where: { className: className },
     });
 
     if (!classExists) {
