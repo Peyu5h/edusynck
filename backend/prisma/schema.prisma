@@ -13,7 +13,7 @@ model User {
   email         String         @unique
   password      String
   role          UserRole       @default(STUDENT)
-  classNumber   String
+  className     String
   class         Class          @relation(fields: [classId], references: [id])
   classId       String
   notifications Notification[]
@@ -25,7 +25,7 @@ model User {
 model Class {
   id            String         @id @default(cuid()) @map("_id")
   name          String
-  classNumber   String         @unique
+  className     String         @unique
   students      User[]
   courses       Course[]
   announcements Announcement[]
