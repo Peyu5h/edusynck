@@ -13,7 +13,7 @@ export const register = async (req, res) => {
             return res.status(400).json({ error: "User already exists" });
         }
         const classExists = await prisma.class.findUnique({
-            where: { className },
+            where: { className: className },
         });
         if (!classExists) {
             return res.status(400).json({ error: "Class not found" });

@@ -33,7 +33,6 @@ export const register = async (req, res) => {
         name,
         email,
         password: hashedPassword,
-        className,
         classId: classExists.id,
       },
       select: {
@@ -41,7 +40,6 @@ export const register = async (req, res) => {
         name: true,
         email: true,
         role: true,
-        className: true,
         class: true,
         notifications: true,
         assignments: true,
@@ -78,7 +76,6 @@ export const login = async (req, res) => {
         email: true,
         password: true,
         role: true,
-        className: true,
         class: true,
         notifications: true,
         assignments: true,
