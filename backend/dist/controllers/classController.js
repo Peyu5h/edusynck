@@ -1,12 +1,12 @@
 import prisma from "../config/db.js";
 import { google } from "googleapis";
 export const create = async (req, res) => {
-    const { name, className } = req.body;
     try {
+        const { name, classNumber } = req.body;
         const newClass = await prisma.class.create({
             data: {
                 name,
-                className,
+                classNumber,
             },
         });
         res.status(201).json({ message: "success", classId: newClass.id });

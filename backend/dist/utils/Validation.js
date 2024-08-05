@@ -9,7 +9,7 @@ export const registerSchema = yup.object().shape({
         .string()
         .min(6, "Password must be at least 6 characters")
         .max(20, "Password can't be this long"),
-    className: yup.string().max(20, "Class name can't be this long"),
+    classNumber: yup.string().max(10, "Class number can't be this long"),
 });
 export const loginSchema = yup.object().shape({
     email: yup.string().email("Enter a valid email"),

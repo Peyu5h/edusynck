@@ -8,7 +8,7 @@ export const register = async (req, res) => {
   try {
     const validatedCredentials = await registerSchema.validate(req.body);
 
-    const { name, email, password, className } = validatedCredentials;
+    const { name, email, password, classNumber } = validatedCredentials;
 
     const userExists = await prisma.user.findUnique({
       where: { email },
@@ -19,7 +19,7 @@ export const register = async (req, res) => {
     }
 
     const classExists = await prisma.class.findUnique({
-      where: { name: className },
+      where: { classNumber: classNumber },
     });
 
     if (!classExists) {
