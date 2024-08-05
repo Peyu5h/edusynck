@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useState } from "react";
-import TextRing from "../../components/TextRing";
+import TextRing from "../TextRing";
 import { MdArrowOutward } from "react-icons/md";
 
-const Page = () => {
+const OnBoardText = () => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div className="relative flex h-screen w-full items-center justify-center bg-bgImage bg-cover bg-center bg-no-repeat">
-      <div className="absolute inset-0 bg-black opacity-20"></div>
-      <div className="relative z-10 flex flex-col text-center font-robson text-6xl">
-        <div className="mb-[-2.7rem] text-9xl leading-snug">CREATE NEW</div>
-        <div className="text-effect mb-[-2.65rem] text-9xl">
+    <div className="hidden md:block">
+      <div className="relative z-10 mb-12 flex flex-col text-center font-robson text-6xl">
+        <div className="mb-[-2.7rem] text-4xl md:text-9xl md:leading-snug">
+          CREATE NEW
+        </div>
+        <div className="text-effect mb-[-2.65rem] text-4xl md:text-9xl">
           EXPERIENCE WITH
         </div>
         <div className="flex items-center justify-center">
@@ -23,12 +24,12 @@ const Page = () => {
           >
             <div
               style={{ zIndex: 99 }}
-              className="box-shadow relative flex h-[10.5rem] w-[10.5rem] cursor-pointer select-none items-center justify-center rounded-full border-[1px] border-[#CDEA67] bg-[#222222] text-black shadow-xl-black"
+              className="box-shadow relative flex h-20 w-20 cursor-pointer select-none items-center justify-center rounded-full border-[1px] border-[#CDEA67] bg-[#222222] text-black shadow-xl-black md:h-[10.5rem] md:w-[10.5rem]"
             >
               <div
                 cursor-pointer
                 select-none
-                className="m-2 flex h-24 w-24 items-center justify-center rounded-full border-2 border-black bg-[#CDEA67]"
+                className="m-2 flex h-8 w-8 items-center justify-center rounded-full border-2 border-black bg-[#CDEA67] md:h-24 md:w-24"
               >
                 <MdArrowOutward className="text-[#222222]" />
               </div>
@@ -43,11 +44,11 @@ const Page = () => {
               />
             </div>
           </div>
-          <div className="text-outline mb-8 ml-[-8px] mt-5 text-9xl text-transparent">
+          <div className="text-outline mb-8 ml-[-8px] mt-5 text-4xl text-transparent md:text-9xl">
             WAYS OF
           </div>
         </div>
-        <div className="mt-[-2.65rem] flex gap-x-4 text-9xl">
+        <div className="mt-[-2.65rem] flex gap-x-4 text-4xl md:text-9xl">
           <h1 className="">PERFECT</h1>
           <div className="mt-1 flex items-center justify-center rounded-xl border-2 border-dashed border-[#707EFF] px-4 pb-2 text-[#707EFF]">
             <span>LEARNING</span>
@@ -58,4 +59,4 @@ const Page = () => {
   );
 };
 
-export default Page;
+export default OnBoardText;
