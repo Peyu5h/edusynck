@@ -3,11 +3,12 @@ import { google } from "googleapis";
 
 export const create = async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, classNumber } = req.body;
 
     const newClass = await prisma.class.create({
       data: {
         name,
+        classNumber,
       },
     });
 
