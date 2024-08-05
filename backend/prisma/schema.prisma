@@ -23,8 +23,7 @@ model User {
 
 model Class {
   id            String         @id @default(cuid()) @map("_id")
-  name          String
-  className     String         @unique
+  name          String         @unique
   students      User[]
   courses       Course[]
   announcements Announcement[]

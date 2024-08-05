@@ -19,7 +19,7 @@ export const register = async (req, res) => {
     }
 
     const classExists = await prisma.class.findUnique({
-      where: { className: className },
+      where: { name: className },
     });
 
     if (!classExists) {
@@ -35,11 +35,7 @@ export const register = async (req, res) => {
         password: hashedPassword,
         classId: classExists.id,
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
+      include: {
         class: true,
         notifications: true,
         assignments: true,
@@ -52,10 +48,12 @@ export const register = async (req, res) => {
       expiresIn: "10y",
     });
 
+    const { password: _, ...userWithoutPassword } = user;
+
     res.status(201).json({
       message: "success",
       token,
-      user,
+      user: userWithoutPassword,
     });
   } catch (error) {
     res.status(500).json({ error: "failed", message: error.message });
@@ -70,12 +68,7 @@ export const login = async (req, res) => {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        password: true,
-        role: true,
+      include: {
         class: true,
         notifications: true,
         assignments: true,
