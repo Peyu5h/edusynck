@@ -2,22 +2,20 @@
 
 import React, { useState } from "react";
 import InputField from "../InputBox";
-import { useToast } from "../ui/use-toast";
 import { useFormik } from "formik";
 import { loginSchema } from "~/lib/validation";
 
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import { ToastAction } from "../ui/toast";
 import { useRouter } from "next/navigation";
+import { useLogin } from "~/hooks/useAuth";
 
 const LoginForm = () => {
-  const [error, setError] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
   const router = useRouter();
+
+  const { mutate: login, error, isPending } = useLogin();
 
   const formik = useFormik({
     initialValues: {
@@ -26,46 +24,7 @@ const LoginForm = () => {
     },
     validationSchema: loginSchema,
     onSubmit: async (values) => {
-      setLoading(true);
-      setError("");
-
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/login`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email: values.email,
-              password: values.password,
-            }),
-          },
-        );
-
-        const data = await response.json();
-        console.log(data);
-        if (data.token) {
-          router.push("/");
-        }
-
-        if (!response.ok) {
-          console.log(data);
-          toast({
-            variant: "destructive",
-            description: data.error,
-          });
-          // throw new Error(data.error);
-        }
-      } catch (err) {
-        toast({
-          variant: "destructive",
-          description: "Something went wrong",
-        });
-      } finally {
-        setLoading(false);
-      }
+      login(values);
     },
   });
 
@@ -107,7 +66,7 @@ const LoginForm = () => {
             touched={touched.password}
           />
 
-          {loading ? (
+          {isPending ? (
             <Button className="w-full py-6" disabled>
               <Loader2 className="mr-2 size-4 animate-spin" />
               Please wait

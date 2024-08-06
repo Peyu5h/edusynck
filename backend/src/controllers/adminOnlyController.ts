@@ -10,6 +10,7 @@ const SCOPES: string[] = [
   "https://www.googleapis.com/auth/classroom.courses.readonly",
   "https://www.googleapis.com/auth/classroom.coursework.me",
   "https://www.googleapis.com/auth/classroom.coursework.students",
+  "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly",
   "https://www.googleapis.com/auth/drive.readonly",
 ];
 
@@ -107,21 +108,41 @@ export const getFile = async (req, res) => {
 };
 
 export const getAssignments = async (req, res) => {
-  const { id } = req.params;
+  const { classId } = req.params;
 
   try {
     const oAuth2Client = req["googleAuth"];
-
     const classroom = google.classroom({ version: "v1", auth: oAuth2Client });
 
-    const assignmentsResponse = await classroom.courses.courseWork.list({
-      courseId: id,
-      pageSize: 10,
-      fields:
-        "courseWork(id,title,description,dueDate,dueTime,materials,alternateLink)",
+    const coursesResponse = await classroom.courses.list({
+      courseStates: ["ACTIVE"],
     });
+    const courses = coursesResponse.data.courses.filter(
+      (course) => course.section === classId,
+    );
 
-    res.json(assignmentsResponse.data.courseWork);
+    if (!courses || courses.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No courses found for the given classId" });
+    }
+
+    const assignmentsPromises = courses.map((course) =>
+      classroom.courses.courseWork.list({
+        courseId: course.id,
+        pageSize: 10,
+        fields:
+          "courseWork(id,title,description,dueDate,dueTime,materials,alternateLink)",
+      }),
+    );
+
+    const assignmentsResponses = await Promise.all(assignmentsPromises);
+
+    const assignments = assignmentsResponses.flatMap(
+      (response) => response.data.courseWork || [],
+    );
+
+    res.json(assignments);
   } catch (error) {
     console.error("Error fetching assignments:", error);
     res.status(500).json({

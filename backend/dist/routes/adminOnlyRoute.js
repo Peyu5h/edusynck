@@ -9,7 +9,7 @@ router
     .route("/file/:fileId")
     .get(trimRequest.all, googleAuthMiddleware, getFile);
 router
-    .route("/course/:id/assignments")
+    .route("/:id/assignments")
     .get(trimRequest.all, googleAuthMiddleware, getAssignments);
 router
     .route("/all-courses")

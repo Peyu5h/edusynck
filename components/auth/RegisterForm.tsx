@@ -2,9 +2,8 @@
 
 import React, { useState } from "react";
 import InputField from "../InputBox";
-import { useToast } from "../ui/use-toast";
 import { useFormik } from "formik";
-import { loginSchema, registerSchema } from "~/lib/validation";
+import { registerSchema } from "~/lib/validation";
 import {
   Select,
   SelectContent,
@@ -17,14 +16,11 @@ import {
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRegister } from "~/hooks/useAuth";
 
 const RegisterForm = () => {
-  const [error, setError] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-  const router = useRouter();
+  const { mutate: register, error, isPending } = useRegister();
 
   const formik = useFormik({
     initialValues: {
@@ -32,52 +28,12 @@ const RegisterForm = () => {
       email: "",
       password: "",
       roll: "",
-      class: "",
+      classNumber: "",
     },
+
     validationSchema: registerSchema,
     onSubmit: async (values) => {
-      setLoading(true);
-      setError("");
-
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/register`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              name: values.name,
-              email: values.email,
-              password: values.password,
-              classNumber: values.class,
-            }),
-          },
-        );
-
-        const data = await response.json();
-
-        console.log(data);
-        if (data.token) {
-          router.push("/");
-        }
-
-        if (!response.ok) {
-          toast({
-            variant: "destructive",
-            description: data.error,
-          });
-          throw new Error(data.error);
-        }
-      } catch (err) {
-        toast({
-          variant: "destructive",
-          description: "Something went wrong",
-        });
-      } finally {
-        setLoading(false);
-      }
+      register(values);
     },
   });
 
@@ -115,8 +71,8 @@ const RegisterForm = () => {
               </div>
               <div>
                 <Select
-                  onValueChange={(value) => setFieldValue("class", value)}
-                  value={values.class}
+                  onValueChange={(value) => setFieldValue("classNumber", value)}
+                  value={values.classNumber}
                 >
                   <SelectTrigger className="w-[132px] text-zinc-400">
                     <SelectValue placeholder="Select class" />
@@ -169,7 +125,7 @@ const RegisterForm = () => {
             touched={touched.password}
           />
 
-          {loading ? (
+          {isPending ? (
             <Button className="w-full py-6" disabled>
               <Loader2 className="mr-2 size-4 animate-spin" />
               Please wait

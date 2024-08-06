@@ -4,6 +4,8 @@ import "./globals.css";
 import { Toaster } from "~/components/ui/toaster";
 import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReduxProvider } from "~/store/ReduxProvider";
+import ReactQueryProvider from "~/components/ReactQueryProvider";
 
 const queryClient = new QueryClient();
 
@@ -23,20 +25,22 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // <QueryClientProvider client={queryClient}>
-    <html lang="en">
+    <html className="dark" lang="en">
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
-        <Toaster />
+        <ReduxProvider>
+          <ReactQueryProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+            </ThemeProvider>
+            <Toaster />
+          </ReactQueryProvider>
+        </ReduxProvider>
       </body>
     </html>
-    // </QueryClientProvider>
   );
 }

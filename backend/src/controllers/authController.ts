@@ -101,3 +101,29 @@ export const login = async (req, res) => {
     res.status(500).json({ error: "failed", message: error.message });
   }
 };
+
+export const getUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        class: true,
+        notifications: true,
+        assignments: true,
+        votedPolls: true,
+        createdPolls: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).json({ message: "Something went wrog" });
+  }
+};

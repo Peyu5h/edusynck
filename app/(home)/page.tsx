@@ -1,11 +1,19 @@
-import React from "react";
+"use client";
 
-const page = () => {
+import { useAtom } from "jotai";
+import React from "react";
+import { useSelector } from "react-redux";
+import UserButton from "~/components/UserButton/UserButton";
+
+const Page = () => {
+  const user = useSelector((state: any) => state.user.user);
+
   return (
     <div>
-      <div className="">Hello</div>
+      <div className="">Welcome, {user.name}!</div>
+      <UserButton user={user} />
     </div>
   );
 };
 
-export default page;
+export default Page;
