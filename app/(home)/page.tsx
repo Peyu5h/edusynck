@@ -10,8 +10,8 @@ const Page = () => {
 
   return (
     <div>
-      <div className="">Welcome, {user.name}!</div>
-      <UserButton user={user} />
+      <div className="">Welcome, {user?.name}!</div>
+      {user && <UserButton user={user} />}
     </div>
   );
 };
