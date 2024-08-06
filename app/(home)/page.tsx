@@ -1,6 +1,5 @@
 "use client";
 
-import { useAtom } from "jotai";
 import React from "react";
 import { useSelector } from "react-redux";
 import UserButton from "~/components/UserButton/UserButton";
@@ -10,8 +9,12 @@ const Page = () => {
 
   return (
     <div>
-      <div className="">Welcome, {user?.name}!</div>
-      {user && <UserButton user={user} />}
+      {user ? (
+        <>
+          <div className="">Welcome, {user?.name}!</div>
+          <UserButton user={user} />
+        </>
+      ) : null}
     </div>
   );
 };

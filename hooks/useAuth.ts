@@ -30,6 +30,7 @@ export const useLogin = () => {
 
       setCookie("token", data.token, { path: "/" });
       setCookie("user", JSON.stringify(data.user), { path: "/" });
+      localStorage.setItem("user", JSON.stringify(data.user));
       dispatch(loginUser(data.user));
 
       return data.user;
@@ -107,6 +108,7 @@ export const useLogout = () => {
 
         removeCookie("token", { path: "/" });
         removeCookie("user", { path: "/" });
+
         dispatch(logoutUser());
 
         router.push("/sign-in");

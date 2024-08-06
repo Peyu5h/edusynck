@@ -18,6 +18,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { useLogout } from "~/hooks/useAuth";
 
 interface UserProps {
   id: string;
@@ -35,6 +36,11 @@ interface UserButtonProps {
 
 const UserButton: React.FC<UserButtonProps> = ({ className, user }) => {
   const { theme, setTheme } = useTheme();
+
+  const { mutate: logout } = useLogout();
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <DropdownMenu>
@@ -82,7 +88,7 @@ const UserButton: React.FC<UserButtonProps> = ({ className, user }) => {
           </DropdownMenuPortal>
         </DropdownMenuSub>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => console.log("temp")}>
+        <DropdownMenuItem onClick={handleLogout}>
           <LogOutIcon className="mr-2 size-4" />
           Logout
         </DropdownMenuItem>

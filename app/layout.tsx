@@ -3,11 +3,9 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "~/components/ui/toaster";
 import { ThemeProvider } from "next-themes";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReduxProvider } from "~/store/ReduxProvider";
 import ReactQueryProvider from "~/components/ReactQueryProvider";
-
-const queryClient = new QueryClient();
+import UserHydration from "~/store/slices/useUserHydration";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,7 +17,7 @@ export const metadata: Metadata = {
   description: "Description",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -35,6 +33,7 @@ export default async function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
+              <UserHydration />
               {children}
             </ThemeProvider>
             <Toaster />
