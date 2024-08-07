@@ -1,3 +1,5 @@
+// tailwind.config.js
+
 import type { Config } from "tailwindcss";
 
 const config = {
@@ -25,6 +27,7 @@ const config = {
     extend: {
       fontFamily: {
         robson: ["Robson Bold", "sans-serif"],
+        khula: ["Khula", "sans-serif"],
       },
       boxShadow: {
         "outline-yellow": "2px 2px 0 #F9D342",
@@ -36,7 +39,6 @@ const config = {
         bgImage:
           "url('https://res.cloudinary.com/dkysrpdi6/image/upload/v1722527717/Academia/grid_edarkb.svg')",
       },
-
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -71,6 +73,14 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        bground1: "var(--bground1)",
+        bground2: "var(--bground2)", //hover2
+        bground3: "var(--bground3)", //hover1
+        popupbox: "var(--popupbox)",
+        text: "var(--text)",
+        thintext: "var(--thintext)",
+        svg: "var(--svg)",
+        pri: "var(--pri)",
       },
       borderRadius: {
         lg: "var(--radius)",

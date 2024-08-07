@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Khula:wght@300;400;600;700;800&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -70,6 +71,28 @@
   clip: rect(0, 0, 0, 0);
   color: var(--color, "#000");
   border: 0;
+}
+
+:root {
+  --bground1: #ffffff;
+  --bground2: #f7f7f7;
+  --bground3: #e5e5e5;
+  --popupbox: #ebebeb;
+  --text: #1a1a1a;
+  --thintext: #4f4f4f;
+  --svg: #5f5f5f;
+  --pri: #ff9800;
+}
+
+.dark {
+  --bground1: #0a0a0a;
+  --bground2: #1d1d1d;
+  --bground3: #343434;
+  --popupbox: #2c2c2c;
+  --text: #d9d9d9;
+  --thintext: #6f6f6f;
+  --svg: #7f7f7f;
+  --pri: #ff9800;
 }
 
 @layer base {

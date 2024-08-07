@@ -7,7 +7,9 @@ router.route("/create").post(trimrRequest.all, create);
 router
     .route("/:classId/assign-courses")
     .post(trimrRequest.all, googleAuthMiddleware, assignCourse);
-router.route("/:classId/courses").get(trimrRequest.all, getCourses);
+router
+    .route("/:classId/courses")
+    .get(trimrRequest.all, googleAuthMiddleware, getCourses);
 router
     .route("/:classId/course/:courseId/assignments")
     .get(trimrRequest.all, googleAuthMiddleware, getAssignments);

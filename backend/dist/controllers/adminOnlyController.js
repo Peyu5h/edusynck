@@ -10,6 +10,9 @@ const SCOPES = [
     "https://www.googleapis.com/auth/classroom.coursework.students",
     "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly",
     "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/classroom.profile.emails",
+    "https://www.googleapis.com/auth/classroom.profile.photos",
+    "https://www.googleapis.com/auth/classroom.rosters.readonly",
 ];
 const TOKEN_PATH = path.join(__dirname, "..", "config", "key.json");
 function getOAuth2Client() {

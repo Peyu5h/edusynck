@@ -19,6 +19,7 @@ model User {
   assignments   Assignment[]
   votedPolls    VotedPoll[]
   createdPolls  Poll[]
+  solutions     Solution[]
 }
 
 model Class {
@@ -31,26 +32,38 @@ model Class {
 }
 
 model Course {
-  id                String         @id @default(cuid()) @map("_id")
-  name              String
-  classId           String
-  class             Class          @relation(fields: [classId], references: [id])
-  assignments       Assignment[]
-  notifications     Notification[]
-  materials         Material[]
-  googleClassroomId String         @unique
+  id                      String         @id @default(cuid()) @map("_id")
+  name                    String
+  classId                 String
+  class                   Class          @relation(fields: [classId], references: [id])
+  assignments             Assignment[]
+  notifications           Notification[]
+  materials               Material[]
+  googleClassroomId       String         @unique
+  professorName           String?
+  professorProfilePicture String?
 }
 
 model Assignment {
-  id          String   @id @default(cuid()) @map("_id")
+  id          String     @id @default(cuid()) @map("_id")
+  googleId    String     @unique
   title       String
-  description String
-  dueDate     DateTime
+  description String?
+  dueDate     DateTime?
   courseId    String
-  course      Course   @relation(fields: [courseId], references: [id])
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  document    String
+  course      Course     @relation(fields: [courseId], references: [id])
+  solutions   Solution[]
+  User        User?      @relation(fields: [userId], references: [id])
+  userId      String?
+}
+
+model Solution {
+  id           String     @id @default(cuid()) @map("_id")
+  documentUrl  String
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
 }
 
 model Announcement {
