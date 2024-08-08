@@ -28,6 +28,7 @@ const config = {
       fontFamily: {
         robson: ["Robson Bold", "sans-serif"],
         khula: ["Khula", "sans-serif"],
+        antic: ["Antic Didone", "sans-serif"],
       },
       boxShadow: {
         "outline-yellow": "2px 2px 0 #F9D342",

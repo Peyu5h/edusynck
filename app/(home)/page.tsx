@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useSelector } from "react-redux";
-import UserButton from "~/components/UserButton/UserButton";
+import UserButton from "~/components/Header/UserButton/UserButton";
 
 const Page = () => {
   const user = useSelector((state: any) => state.user.user);
@@ -16,10 +16,10 @@ const Page = () => {
         </>
       ) : null}
       <div className="flex">
-        <div className="bg-bground1 item-center text-text h-24 w-24">HELO</div>
-        <div className="bg-bground2 text-thintext h-24 w-24">HELO</div>
-        <div className="bg-bground3 text-pri h-24 w-24"></div>
-        <div className="bg-popupbox text-svg h-24 w-24">&</div>
+        <div className="item-center h-24 w-24 bg-bground1 text-text">HELO</div>
+        <div className="h-24 w-24 bg-bground2 text-thintext">HELO</div>
+        <div className="h-24 w-24 bg-bground3 text-pri"></div>
+        <div className="h-24 w-24 bg-popupbox text-svg">&</div>
       </div>
     </div>
   );

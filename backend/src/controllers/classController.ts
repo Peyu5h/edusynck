@@ -66,11 +66,11 @@ export const getCourses = async (req, res) => {
     const classroom = google.classroom({ version: "v1", auth: oAuth2Client });
 
     const coursesWithTeachers = await Promise.all(
-      courses.map(async (course) => {
+      courses?.map(async (course) => {
         try {
-          if (!course.professorName || !course.professorProfilePicture) {
+          if (!course?.professorName || !course?.professorProfilePicture) {
             const teachersResponse = await classroom.courses.teachers.list({
-              courseId: course.googleClassroomId,
+              courseId: course?.googleClassroomId,
             });
             const primaryTeacher = teachersResponse.data.teachers[0];
 

@@ -17,7 +17,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+} from "../../ui/dropdown-menu";
 import { useLogout } from "~/hooks/useAuth";
 
 interface UserProps {
@@ -45,18 +45,18 @@ const UserButton: React.FC<UserButtonProps> = ({ className, user }) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className={className}>
+        <button className="h-12 rounded-full border-none bg-bground3 px-1.5 outline-none">
           <UserAvatar
             className="rounded-full"
-            avatarUrl={user.avatarUrl}
+            avatarUrl={user?.avatarUrl}
             size={40}
           />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        <DropdownMenuLabel>Logged in as @{user.name}</DropdownMenuLabel>
+        <DropdownMenuLabel>Logged in as @{user?.name}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <Link href={`/users/${user.name}`}>
+        <Link href={`/users/${user?.name}`}>
           <DropdownMenuItem>
             <UserIcon className="mr-2 size-4" />
             Profile

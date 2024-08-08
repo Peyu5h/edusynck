@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Khula:wght@300;400;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Antic+Didone&family=Khula:wght@300;400;600;700;800&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -87,7 +87,7 @@
 .dark {
   --bground1: #0a0a0a;
   --bground2: #1d1d1d;
-  --bground3: #343434;
+  --bground3: #292929;
   --popupbox: #2c2c2c;
   --text: #d9d9d9;
   --thintext: #6f6f6f;

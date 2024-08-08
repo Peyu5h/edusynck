@@ -6,6 +6,7 @@ import { Shapes, Settings } from "lucide-react";
 import {
   MdOutlineAssignment,
   MdOutlineChatBubbleOutline,
+  MdOutlinePoll,
 } from "react-icons/md";
 
 export const NavItems = () => {
@@ -45,10 +46,10 @@ export const NavItems = () => {
       position: "top",
     },
     {
-      name: "Announcements",
-      href: "/announcements",
-      icon: <TfiAnnouncement size={20} />,
-      active: isNavItemActive(pathname, "/announcements"),
+      name: "Polls",
+      href: "/polls",
+      icon: <MdOutlinePoll size={20} />,
+      active: isNavItemActive(pathname, "/polls"),
       position: "top",
     },
     {
