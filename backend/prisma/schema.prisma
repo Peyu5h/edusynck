@@ -46,7 +46,7 @@ model Course {
 
 model Assignment {
   id          String     @id @default(cuid()) @map("_id")
-  googleId    String     @unique
+  googleId    String?    @unique
   title       String
   description String?
   dueDate     DateTime?
