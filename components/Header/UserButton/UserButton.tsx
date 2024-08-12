@@ -69,12 +69,7 @@ const UserButton: React.FC<UserButtonProps> = ({ className, user }) => {
           </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
             <DropdownMenuSubContent>
-              <DropdownMenuItem onClick={() => setTheme("system")}>
-                <Monitor className="mr-2 size-4" />
-                System default
-                {theme === "system" && <Check className="ms-2 size-4" />}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme("light")}>
+              <DropdownMenuItem disabled onClick={() => setTheme("light")}>
                 <Sun className="mr-2 size-4" />
                 Light
                 {theme === "light" && <Check className="ms-2 size-4" />}

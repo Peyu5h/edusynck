@@ -12,8 +12,8 @@ import {
 export const NavItems = () => {
   const pathname = usePathname();
 
-  function isNavItemActive(pathname: string, nav: string) {
-    return pathname.includes(nav);
+  function isNavItemActive(nav: string) {
+    return pathname === nav || pathname.startsWith(nav);
   }
 
   return [
@@ -21,42 +21,42 @@ export const NavItems = () => {
       name: "Home",
       href: "/",
       icon: <GoHome size={20} />,
-      active: pathname === "/",
+      active: isNavItemActive("/"),
       position: "top",
     },
     {
       name: "Assignments",
       href: "/assignments",
       icon: <MdOutlineAssignment size={20} />,
-      active: isNavItemActive(pathname, "/assignments"),
+      active: isNavItemActive("/assignments"),
       position: "top",
     },
     {
       name: "Classrooms",
       href: "/classrooms",
       icon: <Shapes size={20} />,
-      active: isNavItemActive(pathname, "/classrooms"),
+      active: isNavItemActive("/classrooms"),
       position: "top",
     },
     {
       name: "Chats",
       href: "/chats",
       icon: <MdOutlineChatBubbleOutline size={20} />,
-      active: isNavItemActive(pathname, "/chats"),
+      active: isNavItemActive("/chats"),
       position: "top",
     },
     {
       name: "Polls",
       href: "/polls",
       icon: <MdOutlinePoll size={20} />,
-      active: isNavItemActive(pathname, "/polls"),
+      active: isNavItemActive("/polls"),
       position: "top",
     },
     {
       name: "Settings",
       href: "/settings",
       icon: <Settings size={18} />,
-      active: isNavItemActive(pathname, "/settings"),
+      active: isNavItemActive("/settings"),
       position: "bottom",
     },
   ];

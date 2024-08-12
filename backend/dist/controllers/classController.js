@@ -135,8 +135,8 @@ export const getAssignments = async (req, res) => {
                 alternateLink: ga.alternateLink,
                 materials: organizeAssignmentMaterials(ga.materials),
                 solutions: solutions.map((s) => ({
-                    userId: s.user.id,
-                    userName: s.user.name,
+                    userId: s.user?.id,
+                    userName: s.user?.name,
                     documentUrl: s.documentUrl,
                 })),
             };

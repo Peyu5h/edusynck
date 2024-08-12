@@ -17,27 +17,21 @@ import {
   CollapsibleTrigger,
 } from "../ui/collapsible";
 import { Separator } from "@radix-ui/react-select";
+import { useAtom } from "jotai";
+import { setSidebarExpandedAtom, sidebarExpandedAtom } from "~/context/atom";
 
 export default function SideNav() {
   const navItems = NavItems();
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = window.localStorage.getItem("sidebarExpanded");
-      if (saved === null) {
-        return true;
-      }
-      return JSON.parse(saved);
-    }
-    return true;
-  });
+  const [isSidebarExpanded] = useAtom(sidebarExpandedAtom);
+  const [, setIsSidebarExpanded] = useAtom(setSidebarExpandedAtom);
 
   const [isClassroomsOpen, setIsClassroomsOpen] = useState(true);
-  const [activePath, setActivePath] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.location.pathname;
-    }
-    return "";
-  });
+
+  const [activePath, setActivePath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    setActivePath(window.location.pathname);
+  }, []);
 
   useEffect(() => {
     if (!isSidebarExpanded) {
@@ -67,7 +61,7 @@ export default function SideNav() {
       <div
         className={ny(
           isSidebarExpanded ? "w-[270px]" : "w-[68px]",
-          "hidden h-full transform rounded-xl bg-bground2 transition-all duration-300 ease-in-out sm:flex",
+          "hidden h-[97vh] transform rounded-xl bg-bground2 transition-all duration-300 ease-in-out sm:flex",
         )}
       >
         <aside className="flex h-full w-full columns-1 flex-col overflow-x-hidden break-words px-4">
@@ -92,7 +86,8 @@ export default function SideNav() {
                           className={ny(
                             "my-2 h-[0.5px] rounded-xl bg-neutral-700",
 
-                            !isSidebarExpanded && "hidden",
+                            (!isSidebarExpanded || !isClassroomsOpen) &&
+                              "hidden",
                           )}
                         />
                         <Collapsible
@@ -135,9 +130,9 @@ export default function SideNav() {
                             <div className="my-4 flex flex-col pl-6">
                               {[
                                 "TCS",
-                                "Database warehousing",
-                                "Internet Programing",
-                                "Software engineering",
+                                "Database-warehousing",
+                                "Internet-Programing",
+                                "Software-engineering",
                               ].map((subject) => (
                                 <SideSubjectitems
                                   key={subject}
@@ -161,7 +156,8 @@ export default function SideNav() {
                           className={ny(
                             "my-2 h-[0.5px] rounded-xl bg-neutral-700",
 
-                            !isSidebarExpanded && "hidden",
+                            (!isSidebarExpanded || !isClassroomsOpen) &&
+                              "hidden",
                           )}
                         />
                       </div>
@@ -310,7 +306,7 @@ export const SideSubjectitems: React.FC<{
             className={`mb-1 ${isClassroom && active ? "" : "opacity-0"}`}
             size={12}
           />
-          <span>{label}</span>
+          <span className="text-[16px]">{label}</span>
         </div>
       </Link>
     </>

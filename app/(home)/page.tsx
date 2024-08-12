@@ -1,25 +1,32 @@
 "use client";
 
-import React from "react";
+import { useAtom } from "jotai";
+import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import UserButton from "~/components/Header/UserButton/UserButton";
+import SubjectCard from "~/components/SubjectCard";
+import { setSidebarExpandedAtom } from "~/context/atom";
 
 const Page = () => {
   const user = useSelector((state: any) => state.user.user);
+  const [, setIsSidebarExpanded] = useAtom(setSidebarExpandedAtom);
+  useEffect(() => {
+    setIsSidebarExpanded(true);
+  }, []);
 
   return (
     <div>
-      {user ? (
-        <>
-          <div className="">Welcome, {user?.name}!</div>
-          <UserButton user={user} />
-        </>
-      ) : null}
-      <div className="flex">
-        <div className="item-center h-24 w-24 bg-bground1 text-text">HELO</div>
-        <div className="h-24 w-24 bg-bground2 text-thintext">HELO</div>
-        <div className="h-24 w-24 bg-bground3 text-pri"></div>
-        <div className="h-24 w-24 bg-popupbox text-svg">&</div>
+      <div className="">
+        <h1 className="pb-4 pt-2 text-3xl font-light text-text">
+          Your classrooms
+        </h1>
+      </div>
+      <div className="grid w-full grid-cols-3 gap-6">
+        <SubjectCard />
+        <SubjectCard />
+        <SubjectCard />
+        <SubjectCard />
+        <SubjectCard />
       </div>
     </div>
   );
