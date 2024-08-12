@@ -26,8 +26,7 @@ export default function SideNav() {
   const [, setIsSidebarExpanded] = useAtom(setSidebarExpandedAtom);
 
   const [isClassroomsOpen, setIsClassroomsOpen] = useState(true);
-
-  const [activePath, setActivePath] = useState(window.location.pathname);
+  const [activePath, setActivePath] = useState("");
 
   useEffect(() => {
     setActivePath(window.location.pathname);
@@ -36,15 +35,6 @@ export default function SideNav() {
   useEffect(() => {
     if (!isSidebarExpanded) {
       setIsClassroomsOpen(false);
-    }
-  }, [isSidebarExpanded]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(
-        "sidebarExpanded",
-        JSON.stringify(isSidebarExpanded),
-      );
     }
   }, [isSidebarExpanded]);
 
