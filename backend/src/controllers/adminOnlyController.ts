@@ -2,6 +2,8 @@ import { google } from "googleapis";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import fetch from "node-fetch";
+import NodeCache from "node-cache";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -150,6 +152,57 @@ export const getAssignments = async (req, res) => {
     console.error("Error fetching assignments:", error);
     res.status(500).json({
       error: "Failed to fetch assignments",
+      message: error.message,
+    });
+  }
+};
+
+const imageCache = new NodeCache({ stdTTL: 3600 });
+
+export const getImage = async (req, res) => {
+  const { thumbnailUrl } = req.query;
+
+  if (!thumbnailUrl) {
+    return res.status(400).json({ error: "Thumbnail URL is required" });
+  }
+
+  try {
+    // Check image in cache
+    const cachedImage = imageCache.get(thumbnailUrl);
+    if (cachedImage) {
+      res.setHeader(
+        "Content-Type",
+        (cachedImage as { mimeType: string }).mimeType,
+      );
+      res.send((cachedImage as { data: any }).data);
+      return;
+    }
+
+    const response = await fetch(thumbnailUrl, {
+      headers: {
+        Authorization: `Bearer ${req.googleAuth.credentials.access_token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const contentType = response.headers.get("content-type");
+    const imageBuffer = await response.buffer();
+
+    // Cache the image
+    imageCache.set(thumbnailUrl, {
+      mimeType: contentType,
+      data: imageBuffer,
+    });
+
+    res.setHeader("Content-Type", contentType);
+    res.send(imageBuffer);
+  } catch (error) {
+    console.error("Error fetching image:", error);
+    res.status(500).json({
+      error: "Failed to fetch image",
       message: error.message,
     });
   }

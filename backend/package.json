@@ -24,6 +24,8 @@
     "express": "^4.19.2",
     "googleapis": "^140.0.1",
     "jsonwebtoken": "^9.0.2",
+    "node-cache": "^5.1.2",
+    "node-fetch": "^3.3.2",
     "prisma": "^5.17.0",
     "trim-request": "^1.0.6",
     "yup": "^1.4.0"

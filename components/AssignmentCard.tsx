@@ -5,6 +5,7 @@ import Badge from "./Badge";
 import Link from "next/link";
 
 const AssignmentCard = () => {
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   return (
     <div>
       <Link
@@ -14,7 +15,7 @@ const AssignmentCard = () => {
         <div className="left flex gap-x-4">
           <div className="thumbnai w-[6.2rem] overflow-hidden p-2">
             <Image
-              src="https://lh3.googleusercontent.com/drive-storage/AJQWtBNOfZ2dtr20FN9mL1t06Zjijl2nrC1yFlt2ZcFsKOgBJYhiex2SSO683BMYbJR_a8PnyFSkwrcXDB_k9Ho9lnIF9lbGNyT8KeyGnjhAL_E-LdQ=s200"
+              src={`${backendUrl}/api/admin/image?thumbnailUrl=https://lh3.googleusercontent.com/drive-storage/AJQWtBMsbndqQEI3oO9huGu2TeXVvBBHmkWD-74qkYfpN128M3ikDj9Lz7VeC-j_jtdg1S8dNc6zZjW_NTRgcnM8vepqVZBUX6RADhyY8ihrId1COCk=s200`}
               alt="thumbnail"
               className="rounded-lg"
               width="99"
