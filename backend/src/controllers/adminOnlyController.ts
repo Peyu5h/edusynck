@@ -224,3 +224,35 @@ export const getImage = async (req, res) => {
     });
   }
 };
+
+import { getTextExtractor } from "office-text-extractor";
+
+const extractor = getTextExtractor();
+
+export const extractTextFromPptxUrl = async (req, res) => {
+  const { url } = req.query;
+
+  if (!url || typeof url !== "string") {
+    return res
+      .status(400)
+      .json({ error: "URL query parameter is required and must be a string" });
+  }
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file: ${response.statusText}`);
+    }
+
+    const buffer = await response.buffer();
+
+    const text = await extractor.extractText({ input: buffer, type: "buffer" });
+
+    res.json({ text });
+  } catch (error) {
+    console.error("Error processing PPTX file:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to process PPTX file", message: error.message });
+  }
+};

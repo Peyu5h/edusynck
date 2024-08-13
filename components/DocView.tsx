@@ -9,9 +9,13 @@ import "@cyntler/react-doc-viewer/dist/index.css";
 import { Loader2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import * as mammoth from "mammoth";
-import * as PDFJS from "pdfjs-dist";
 
-PDFJS.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS.version}/pdf.worker.min.js`;
+import pdfToText from "react-pdftotext";
+import Tesseract from "tesseract.js";
+import * as pdfjsLib from "pdfjs-dist";
+import "pdfjs-dist/build/pdf.worker.min.js";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const LoadingRenderer: React.FC<{
   document: IDocument | undefined;
@@ -24,13 +28,30 @@ const LoadingRenderer: React.FC<{
   );
 };
 
+const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 const DocView: React.FC = () => {
   const doc: IDocument[] = [
     {
-      uri: "http://localhost:8000/api/admin/file/1xU1Z55_GtWsIZqo_cyEI5kDfT-4-oixK",
-      fileType: "docx",
+      uri: "https://academiaa.onrender.com/api/admin/file/1VdPSV1gDrMOUCNhR2Xes4BwEavALYXlD",
+      fileType: "jpeg",
       fileName: "test.docx",
     },
+    // {
+    //   uri: "https://academiaa.onrender.com/api/admin/file/141J5fh9QdZQ1aT4AzoC_eK26UDQrwHiG",
+    //   fileType: "pdf",
+    //   fileName: "test.pdf",
+    // },
+    // {
+    //   uri: "https://academiaa.onrender.com/api/admin/file/141J5fh9QdZQ1aT4AzoC_eK26UDQrwHiG",
+    //   fileType: "pdf",
+    //   fileName: "test.pdf",
+    // },
+    // {
+    //   uri: "https://academiaa.onrender.com/api/admin/file/1LLAYIB7637x4Z2m_LYPTzkrGFq1OYFrb",
+    //   fileType: "pptx",
+    //   fileName: "test.pptx",
+    // },
   ];
 
   const [selectedDoc, setSelectedDoc] = useState<IDocument>(doc[0]);
@@ -38,16 +59,59 @@ const DocView: React.FC = () => {
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
 
   const extractTextFromPDF = async (url: string): Promise<string> => {
-    const pdf = await PDFJS.getDocument(url).promise;
-    let text = "";
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      text +=
-        content.items.map((item) => ("str" in item ? item.str : "")).join(" ") +
-        "\n";
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const file = new File([blob], "document.pdf", { type: blob.type });
+
+      try {
+        const text = await pdfToText(file);
+        return text;
+      } catch (textError) {
+        console.error(
+          "Text extraction failed, falling back to OCR:",
+          textError,
+        );
+        return await performOcr(blob);
+      }
+    } catch (error) {
+      console.error("Error during PDF text extraction:", error);
+      throw new Error("Failed to extract text from PDF");
     }
-    return text;
+  };
+
+  const performOcr = async (blob: Blob): Promise<string> => {
+    try {
+      const typedArray = new Uint8Array(await blob.arrayBuffer());
+      const pdf = await pdfjsLib.getDocument(typedArray).promise;
+
+      const extractedText: string[] = [];
+      const numPages = pdf.numPages;
+      const pagePromises = [];
+
+      for (let i = 1; i <= numPages; i++) {
+        pagePromises.push(
+          pdf.getPage(i).then(async (page: any) => {
+            const viewport = page.getViewport({ scale: 2 });
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d");
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            await page.render({ canvasContext: context, viewport }).promise;
+
+            const imageData = canvas.toDataURL("image/png");
+            const { data } = await Tesseract.recognize(imageData, "eng");
+            extractedText.push(data.text);
+          }),
+        );
+      }
+
+      await Promise.all(pagePromises);
+      return extractedText.join("\n\n");
+    } catch (error) {
+      console.error("OCR extraction failed:", error);
+      throw new Error("OCR failed to extract text");
+    }
   };
 
   const extractTextFromDOCX = async (url: string): Promise<string> => {
@@ -57,16 +121,31 @@ const DocView: React.FC = () => {
     return result.value;
   };
 
-  const extractTextFromXLSX = async (url: string): Promise<string> => {
-    const response = await fetch(url);
-    const arrayBuffer = await response.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer, { type: "array" });
-    let text = "";
-    workbook.SheetNames.forEach((sheetName) => {
-      const sheet = workbook.Sheets[sheetName];
-      text += XLSX.utils.sheet_to_csv(sheet) + "\n\n";
-    });
-    return text;
+  const extractTextFromPptx = async (url: string): Promise<string> => {
+    try {
+      const response = await fetch(
+        `${backendUrl}/api/admin/convert2PDF?url=${url}`,
+      );
+      const data = await response.json();
+      return data.text;
+    } catch (error) {
+      return "";
+    }
+  };
+
+  const extractTextFromImage = async (url: string): Promise<string> => {
+    try {
+      const response = await fetch(
+        `${backendUrl}/api/admin/image?thumbnailUrl=${url}`,
+      );
+      const blob = await response.blob();
+      const imageData = URL.createObjectURL(blob);
+      const { data } = await Tesseract.recognize(imageData, "eng");
+      return data.text;
+    } catch (error) {
+      console.error("Error extracting text from image:", error);
+      throw new Error("Failed to extract text from image");
+    }
   };
 
   useEffect(() => {
@@ -81,8 +160,14 @@ const DocView: React.FC = () => {
           case "docx":
             text = await extractTextFromDOCX(selectedDoc.uri);
             break;
-          case "xlsx":
-            text = await extractTextFromXLSX(selectedDoc.uri);
+          case "pptx":
+          case "ppt":
+            text = await extractTextFromPptx(selectedDoc.uri);
+            break;
+          case "jpeg":
+          case "jpg":
+          case "png":
+            text = await extractTextFromImage(selectedDoc.uri);
             break;
           default:
             text = "Unsupported file type";

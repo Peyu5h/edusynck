@@ -7,6 +7,7 @@ import {
   getAssignments,
   oauth2callback,
   getImage,
+  extractTextFromPptxUrl,
 } from "../controllers/adminOnlyController.js";
 import { googleAuthMiddleware } from "../middlewares/googleAuthMiddleware.js";
 
@@ -17,6 +18,7 @@ router.route("/auth").get(trimRequest.all, auth);
 router
   .route("/file/:fileId")
   .get(trimRequest.all, googleAuthMiddleware, getFile);
+router.route("/convert2PDF").get(trimRequest.all, extractTextFromPptxUrl);
 router.route("/image").get(trimRequest.all, googleAuthMiddleware, getImage);
 router
   .route("/:id/assignments")
