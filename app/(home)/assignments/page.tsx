@@ -5,13 +5,16 @@ import { useEffect } from "react";
 import AssignmentCard from "~/components/AssignmentCard";
 import SubjectCard from "~/components/SubjectCard";
 import { Button } from "~/components/ui/button";
-import { setSidebarExpandedAtom } from "~/context/atom";
+import { sidebarExpandedAtom } from "~/context/atom";
 
 export default function Assignments() {
-  const [, setIsSidebarExpanded] = useAtom(setSidebarExpandedAtom);
+  const [isSidebarExpanded, setIsSidebarExpanded] =
+    useAtom(sidebarExpandedAtom);
+
   useEffect(() => {
     setIsSidebarExpanded(true);
-  }, []);
+  }, [setIsSidebarExpanded]);
+
   return (
     <div>
       <div className="">

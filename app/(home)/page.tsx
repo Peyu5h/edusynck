@@ -5,15 +5,16 @@ import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import UserButton from "~/components/Header/UserButton/UserButton";
 import SubjectCard from "~/components/SubjectCard";
-import { setSidebarExpandedAtom } from "~/context/atom";
+import { sidebarExpandedAtom } from "~/context/atom";
 
 const Page = () => {
   const user = useSelector((state: any) => state.user.user);
-  const [, setIsSidebarExpanded] = useAtom(setSidebarExpandedAtom);
+  const [isSidebarExpanded, setIsSidebarExpanded] =
+    useAtom(sidebarExpandedAtom);
+
   useEffect(() => {
     setIsSidebarExpanded(true);
-  }, []);
-
+  }, [setIsSidebarExpanded]);
   return (
     <div>
       <div className="">

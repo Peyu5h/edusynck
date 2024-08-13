@@ -1,18 +1,18 @@
 "use client";
 
-import { useAtom } from "jotai";
 import { useEffect } from "react";
-import AssignmentCard from "~/components/AssignmentCard";
-import Badge from "~/components/Badge";
+import { useAtom } from "jotai";
+import { sidebarExpandedAtom } from "~/context/atom";
 import DocView from "~/components/DocView";
 
-import { setSidebarExpandedAtom } from "~/context/atom";
-
 export default function AssignmentPage() {
-  const [, setIsSidebarExpanded] = useAtom(setSidebarExpandedAtom);
+  const [isSidebarExpanded, setIsSidebarExpanded] =
+    useAtom(sidebarExpandedAtom);
+
   useEffect(() => {
     setIsSidebarExpanded(false);
-  }, []);
+  }, [setIsSidebarExpanded]);
+
   return (
     <div>
       <div className="flex h-[80vh] w-full cursor-pointer justify-between rounded-lg bg-bground2 p-4">

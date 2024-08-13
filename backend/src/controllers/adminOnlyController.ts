@@ -167,7 +167,7 @@ export const getImage = async (req, res) => {
   }
 
   try {
-    // Check image in cache
+    // Check if cache
     const cachedImage = imageCache.get(thumbnailUrl);
     if (cachedImage) {
       res.setHeader(
@@ -178,9 +178,19 @@ export const getImage = async (req, res) => {
       return;
     }
 
+    const oAuth2Client = req["googleAuth"];
+    if (!oAuth2Client) {
+      throw new Error("OAuth2 client not found");
+    }
+
+    if (oAuth2Client.isTokenExpiring()) {
+      await oAuth2Client.refreshAccessToken();
+    }
+
+    // Fetch image
     const response = await fetch(thumbnailUrl, {
       headers: {
-        Authorization: `Bearer ${req.googleAuth.credentials.access_token}`,
+        Authorization: `Bearer ${oAuth2Client.credentials.access_token}`,
       },
     });
 
@@ -191,11 +201,18 @@ export const getImage = async (req, res) => {
     const contentType = response.headers.get("content-type");
     const imageBuffer = await response.buffer();
 
-    // Cache the image
+    // Cache image
     imageCache.set(thumbnailUrl, {
       mimeType: contentType,
       data: imageBuffer,
     });
+
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+    );
 
     res.setHeader("Content-Type", contentType);
     res.send(imageBuffer);

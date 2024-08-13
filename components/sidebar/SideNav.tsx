@@ -18,19 +18,25 @@ import {
 } from "../ui/collapsible";
 import { Separator } from "@radix-ui/react-select";
 import { useAtom } from "jotai";
-import { setSidebarExpandedAtom, sidebarExpandedAtom } from "~/context/atom";
+import { sidebarExpandedAtom } from "~/context/atom";
 
 export default function SideNav() {
-  const navItems = NavItems();
-  const [isSidebarExpanded] = useAtom(sidebarExpandedAtom);
-  const [, setIsSidebarExpanded] = useAtom(setSidebarExpandedAtom);
-
+  const [isSidebarExpanded, setIsSidebarExpanded] =
+    useAtom(sidebarExpandedAtom);
   const [isClassroomsOpen, setIsClassroomsOpen] = useState(true);
   const [activePath, setActivePath] = useState("");
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     setActivePath(window.location.pathname);
   }, []);
+  useEffect(() => {
+    if (!isSidebarExpanded) {
+      setIsClassroomsOpen(false);
+    }
+  }, [isSidebarExpanded]);
+  const navItems = NavItems();
 
   useEffect(() => {
     if (!isSidebarExpanded) {
@@ -45,6 +51,10 @@ export default function SideNav() {
   const handleNavItemClick = (path: string) => {
     setActivePath(path);
   };
+
+  if (!isClient) {
+    return null; // or a loading spinner
+  }
 
   return (
     <div className="pr-4">

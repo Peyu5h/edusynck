@@ -2,23 +2,20 @@ import { atom } from "jotai";
 
 const getInitialState = (): boolean => {
   if (typeof window !== "undefined") {
-    const saved = window.localStorage.getItem("sidebarExpanded");
-    if (saved === null) {
-      return true;
-    }
-    return JSON.parse(saved);
+    const saved = localStorage.getItem("sidebarExpanded");
+    return saved !== null ? JSON.parse(saved) : true;
   }
   return true;
 };
 
-export const sidebarExpandedAtom = atom<boolean>(getInitialState());
+const baseAtom = atom(getInitialState());
 
-export const setSidebarExpandedAtom = atom(
-  null,
+export const sidebarExpandedAtom = atom(
+  (get) => get(baseAtom),
   (get, set, newValue: boolean) => {
-    set(sidebarExpandedAtom, newValue);
+    set(baseAtom, newValue);
     if (typeof window !== "undefined") {
-      window.localStorage.setItem("sidebarExpanded", JSON.stringify(newValue));
+      localStorage.setItem("sidebarExpanded", JSON.stringify(newValue));
     }
   },
 );
