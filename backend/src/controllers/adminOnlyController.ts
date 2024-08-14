@@ -1,9 +1,10 @@
 import { google } from "googleapis";
 import fs from "fs";
-import path from "path";
+import path, { extname } from "path";
 import { fileURLToPath } from "url";
 import fetch from "node-fetch";
 import NodeCache from "node-cache";
+import prisma from "../config/db.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -112,48 +113,75 @@ export const getFile = async (req, res) => {
   }
 };
 
-export const getAssignments = async (req, res) => {
+export const getAllAssignments = async (req, res) => {
   const { classId } = req.params;
+  const oAuth2Client = req["googleAuth"];
 
   try {
-    const oAuth2Client = req["googleAuth"];
-    const classroom = google.classroom({ version: "v1", auth: oAuth2Client });
-
-    const coursesResponse = await classroom.courses.list({
-      courseStates: ["ACTIVE"],
+    // Fetch all courses for the given classId
+    const courses = await prisma.course.findMany({
+      where: { classId },
+      select: { googleClassroomId: true, name: true },
     });
-    const courses = coursesResponse.data.courses.filter(
-      (course) => course.section === classId,
-    );
 
     if (!courses || courses.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No courses found for the given classId" });
+      return res.status(404).json({ error: "No courses found for this class" });
     }
 
-    const assignmentsPromises = courses.map((course) =>
-      classroom.courses.courseWork.list({
-        courseId: course.id,
-        pageSize: 10,
-        fields:
-          "courseWork(id,title,description,dueDate,dueTime,materials,alternateLink)",
-      }),
+    const classroom = google.classroom({ version: "v1", auth: oAuth2Client });
+
+    // Function to fetch assignments for a single course
+    const fetchCourseAssignments = async (course) => {
+      const { data: { courseWork = [] } = {} } =
+        await classroom.courses.courseWork.list({
+          courseId: course.googleClassroomId,
+          pageSize: 20,
+          fields:
+            "courseWork(id,title,description,dueDate,dueTime,materials,alternateLink)",
+        });
+
+      return courseWork.map((ga) => {
+        const dueDate = parseDueDate(ga.dueDate, ga.dueTime);
+        const formattedDueDate = formatDueDate(dueDate);
+
+        return {
+          googleId: ga.id,
+          title: ga.title,
+          description: ga.description,
+          dueDate: formattedDueDate,
+          alternateLink: ga.alternateLink,
+          materials: organizeAssignmentMaterials(ga.materials),
+          type:
+            ga.materials && ga.materials[0]?.driveFile?.driveFile?.title
+              ? getFileType(
+                  extname(ga.materials[0].driveFile.driveFile.title)
+                    .toLowerCase()
+                    .slice(1),
+                )
+              : null,
+          thumbnail:
+            (ga.materials &&
+              ga.materials[0]?.driveFile?.driveFile?.thumbnailUrl) ||
+            null,
+          courseName: course.name,
+        };
+      });
+    };
+
+    // Fetch assignments for all courses concurrently
+    const allAssignments = await Promise.all(
+      courses.map((course) => fetchCourseAssignments(course)),
     );
 
-    const assignmentsResponses = await Promise.all(assignmentsPromises);
+    // Flatten the array of assignments
+    const flattenedAssignments = allAssignments.flat();
 
-    const assignments = assignmentsResponses.flatMap(
-      (response) => response.data.courseWork || [],
-    );
-
-    res.json(assignments);
+    res.json(flattenedAssignments);
   } catch (error) {
-    console.error("Error fetching assignments:", error);
-    res.status(500).json({
-      error: "Failed to fetch assignments",
-      message: error.message,
-    });
+    console.error("Error fetching all assignments:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to fetch assignments", message: error.message });
   }
 };
 
@@ -226,6 +254,12 @@ export const getImage = async (req, res) => {
 };
 
 import { getTextExtractor } from "office-text-extractor";
+import {
+  formatDueDate,
+  getFileType,
+  organizeAssignmentMaterials,
+  parseDueDate,
+} from "../utils/functions.js";
 
 const extractor = getTextExtractor();
 

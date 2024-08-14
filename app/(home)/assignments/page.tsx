@@ -1,19 +1,41 @@
 "use client";
 
 import { useAtom } from "jotai";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import AssignmentCard from "~/components/AssignmentCard";
-import SubjectCard from "~/components/SubjectCard";
 import { Button } from "~/components/ui/button";
 import { sidebarExpandedAtom } from "~/context/atom";
 
 export default function Assignments() {
   const [isSidebarExpanded, setIsSidebarExpanded] =
     useAtom(sidebarExpandedAtom);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  const user = useSelector((state: any) => state.user.user);
+  const classId = user?.classId;
 
   useEffect(() => {
     setIsSidebarExpanded(true);
   }, [setIsSidebarExpanded]);
+
+  useEffect(() => {
+    try {
+      const fetchData = async () => {
+        const response = await fetch(
+          `${backendUrl}/api/admin/${classId}/assignments`,
+        );
+        const data = await response.json();
+        setAssignments(data);
+      };
+      fetchData();
+    } catch (error) {
+      console.log(error);
+    }
+  }, []);
+
+  console.log(assignments);
 
   return (
     <div>
@@ -34,13 +56,9 @@ export default function Assignments() {
         </Button>
       </div>
       <div className="grid w-full grid-cols-1 gap-6">
-        <AssignmentCard />
-        <AssignmentCard />
-        <AssignmentCard />
-        <AssignmentCard />
-        <AssignmentCard />
-        <AssignmentCard />
-        <AssignmentCard />
+        {assignments.map((assignment) => (
+          <AssignmentCard key={assignment.id} assignment={assignment} />
+        ))}
       </div>
     </div>
   );

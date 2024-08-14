@@ -8,14 +8,14 @@ export const getFileType = (extension) => {
     if (extension === "pdf")
         return "PDF";
     if (documentTypes.includes(extension))
-        return "Document";
+        return "DOCX";
     if (spreadsheetTypes.includes(extension))
-        return "Spreadsheet";
+        return "XLS";
     if (presentationTypes.includes(extension))
-        return "Presentation";
+        return "PPT";
     if (imageTypes.includes(extension))
-        return "Image";
-    return "Other";
+        return "IMG";
+    return "PDF";
 };
 export const organizeAssignmentMaterials = (materials) => {
     if (!materials)

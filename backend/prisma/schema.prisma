@@ -45,16 +45,21 @@ model Course {
 }
 
 model Assignment {
-  id          String     @id @default(cuid()) @map("_id")
-  googleId    String?    @unique
-  title       String
-  description String?
-  dueDate     DateTime?
-  courseId    String
-  course      Course     @relation(fields: [courseId], references: [id])
-  solutions   Solution[]
-  User        User?      @relation(fields: [userId], references: [id])
-  userId      String?
+  id            String     @id @default(cuid()) @map("_id")
+  googleId      String?    @unique
+  title         String
+  description   String?
+  dueDate       DateTime?
+  courseId      String
+  course        Course     @relation(fields: [courseId], references: [id])
+  solutions     Solution[]
+  User          User?      @relation(fields: [userId], references: [id])
+  userId        String?
+  lastUpdated   DateTime   @default(now())
+  materials     Json?
+  alternateLink String?
+  type          String?
+  thumbnail     String?    @default("https://res.cloudinary.com/dkysrpdi6/image/upload/v1723574586/image_lpepb4.png")
 }
 
 model Solution {

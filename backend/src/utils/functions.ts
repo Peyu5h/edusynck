@@ -15,11 +15,11 @@ export const getFileType = (extension) => {
   const imageTypes = ["jpg", "jpeg", "png", "gif", "bmp"];
 
   if (extension === "pdf") return "PDF";
-  if (documentTypes.includes(extension)) return "Document";
-  if (spreadsheetTypes.includes(extension)) return "Spreadsheet";
-  if (presentationTypes.includes(extension)) return "Presentation";
-  if (imageTypes.includes(extension)) return "Image";
-  return "Other";
+  if (documentTypes.includes(extension)) return "DOCX";
+  if (spreadsheetTypes.includes(extension)) return "XLS";
+  if (presentationTypes.includes(extension)) return "PPT";
+  if (imageTypes.includes(extension)) return "IMG";
+  return "PDF";
 };
 
 export const organizeAssignmentMaterials = (materials) => {

@@ -32,16 +32,16 @@ const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const DocView: React.FC = () => {
   const doc: IDocument[] = [
-    {
-      uri: "https://academiaa.onrender.com/api/admin/file/1VdPSV1gDrMOUCNhR2Xes4BwEavALYXlD",
-      fileType: "jpeg",
-      fileName: "test.docx",
-    },
     // {
-    //   uri: "https://academiaa.onrender.com/api/admin/file/141J5fh9QdZQ1aT4AzoC_eK26UDQrwHiG",
-    //   fileType: "pdf",
-    //   fileName: "test.pdf",
+    //   uri: "https://academiaa.onrender.com/api/admin/file/1VdPSV1gDrMOUCNhR2Xes4BwEavALYXlD",
+    //   fileType: "jpeg",
+    //   fileName: "test.docx",
     // },
+    {
+      uri: "https://academiaa.onrender.com/api/admin/file/141J5fh9QdZQ1aT4AzoC_eK26UDQrwHiG",
+      fileType: "pdf",
+      fileName: "test.pdf",
+    },
     // {
     //   uri: "https://academiaa.onrender.com/api/admin/file/141J5fh9QdZQ1aT4AzoC_eK26UDQrwHiG",
     //   fileType: "pdf",

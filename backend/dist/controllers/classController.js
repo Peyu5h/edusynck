@@ -100,25 +100,46 @@ export const getAssignments = async (req, res) => {
     try {
         const oAuth2Client = req["googleAuth"];
         const classroom = google.classroom({ version: "v1", auth: oAuth2Client });
+        // Fetch assignments from Google Classroom
         const { data: { courseWork = [] } = {} } = await classroom.courses.courseWork.list({
             courseId,
             pageSize: 20,
             fields: "courseWork(id,title,description,dueDate,dueTime,materials,alternateLink)",
         });
+        // Process and store assignments
         const organizedAssignments = await Promise.all(courseWork.map(async (ga) => {
             const dueDate = parseDueDate(ga.dueDate, ga.dueTime);
             const formattedDueDate = formatDueDate(dueDate);
+            // Upsert assignment in the database
             const localAssignment = await prisma.assignment.upsert({
                 where: { googleId: ga.id },
-                update: { title: ga.title, description: ga.description, dueDate },
+                update: {
+                    title: ga.title,
+                    description: ga.description,
+                    dueDate,
+                    materials: organizeAssignmentMaterials(ga.materials),
+                    type: getFileType(extname(ga.materials[0].driveFile.driveFile.title)
+                        .toLowerCase()
+                        .slice(1)),
+                    thumbnail: ga.materials[0].driveFile.driveFile.thumbnailUrl,
+                    alternateLink: ga.alternateLink,
+                    lastUpdated: new Date(),
+                },
                 create: {
                     googleId: ga.id,
                     title: ga.title,
                     description: ga.description,
                     dueDate,
                     courseId,
+                    materials: organizeAssignmentMaterials(ga.materials),
+                    type: extname(ga.materials[0].driveFile.driveFile.title)
+                        .toLowerCase()
+                        .slice(1),
+                    thumbnail: ga.materials[0].driveFile.driveFile.thumbnailUrl,
+                    alternateLink: ga.alternateLink,
                 },
             });
+            // Fetch solutions
             const solutions = await prisma.solution.findMany({
                 where: { assignmentId: localAssignment.id },
                 select: {
@@ -133,7 +154,9 @@ export const getAssignments = async (req, res) => {
                 description: ga.description,
                 dueDate: formattedDueDate,
                 alternateLink: ga.alternateLink,
-                materials: organizeAssignmentMaterials(ga.materials),
+                materials: localAssignment.materials,
+                type: localAssignment.type,
+                thumbnail: localAssignment.thumbnail,
                 solutions: solutions.map((s) => ({
                     userId: s.user?.id,
                     userName: s.user?.name,

@@ -4,39 +4,133 @@ import { Button } from "./ui/button";
 import Badge from "./Badge";
 import Link from "next/link";
 
-const AssignmentCard = () => {
+interface AssignmentCardProps {
+  assignment: {
+    id: string;
+    title: string;
+    description: string;
+    dueDate: string;
+    materials: {
+      driveFile: {
+        driveFile: {
+          id: string;
+          title: string;
+          alternateLink: string;
+          thumbnailUrl: string;
+          extension: string;
+          type: string;
+        };
+        shareMode: string;
+      };
+    }[];
+    type?: string;
+    thumbnail?: string;
+    alternateLink: string;
+  };
+}
+
+const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment }) => {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const material = assignment.materials?.[0]?.driveFile?.driveFile;
+
+  const formatDescription = (
+    description: string | undefined | null,
+    maxLength = 100,
+  ): string => {
+    if (!description) {
+      return "";
+    }
+
+    const truncated =
+      description.length > maxLength
+        ? `${description.slice(0, maxLength)}...`
+        : description;
+
+    return `${truncated}`;
+  };
+  const handleDuePriority = (dueDate: string | null | undefined) => {
+    if (!dueDate) return "green";
+
+    if (dueDate === null) {
+      return "green";
+    }
+
+    if (dueDate === "missing") {
+      return "red";
+    }
+
+    const priority = dueDate.split(" ")[0];
+    if (priority === null || undefined) return "green";
+    if (parseInt(priority) > 7 && parseInt(priority) < 14) return "orange";
+    if (parseInt(priority) <= 7) return "red";
+    if (parseInt(priority) >= 14) return "blue";
+  };
+
+  const handleDueDate = (dueDate: string | null | undefined) => {
+    if (!dueDate) return "No due";
+
+    if (dueDate === null) {
+      return "No due";
+    }
+
+    if (dueDate === "missing") {
+      return "Overdue";
+    }
+
+    return dueDate;
+  };
   return (
     <div>
       <Link
-        href={"/assignments/sadasdsa"}
+        href={`/assignments/${assignment.id}`}
         className="flex w-full cursor-pointer items-center justify-between overflow-hidden rounded-lg border-[1px] border-transparent bg-bground2 duration-150 hover:border-[1px] hover:border-zinc-700"
       >
         <div className="left flex gap-x-4">
           <div className="thumbnai w-[6.2rem] overflow-hidden p-2">
-            <Image
-              src={`${backendUrl}/api/admin/image?thumbnailUrl=https://lh3.googleusercontent.com/drive-storage/AJQWtBMsbndqQEI3oO9huGu2TeXVvBBHmkWD-74qkYfpN128M3ikDj9Lz7VeC-j_jtdg1S8dNc6zZjW_NTRgcnM8vepqVZBUX6RADhyY8ihrId1COCk=s200`}
-              alt="thumbnail"
-              className="rounded-lg"
-              width="99"
-              height={99}
-              layout="responsive"
-            />
+            {material?.thumbnailUrl ? (
+              <Image
+                src={`${backendUrl}/api/admin/image?thumbnailUrl=${material.thumbnailUrl}`}
+                alt="thumbnail"
+                className="rounded-lg"
+                width="99"
+                height={99}
+                layout="responsive"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center rounded-lg bg-gray-200">
+                <Image
+                  src={`https://res.cloudinary.com/dkysrpdi6/image/upload/v1723574586/image_lpepb4.png`}
+                  alt="thumbnail"
+                  className="rounded-lg"
+                  width="99"
+                  height={99}
+                  layout="responsive"
+                />
+              </div>
+            )}
           </div>
           <div className="description flex flex-col py-4">
-            <h1 className="text-2xl font-light text-text">Assignment No-1</h1>
+            <h1 className="text-2xl font-light text-text">
+              {assignment.title}
+            </h1>
             <p className="text-md font-normal text-thintext">
-              Date of Performance- 31/7/2024\nDate of Submission -23/8/2024
+              {formatDescription(assignment.description, 110)}
             </p>
 
             <div className="tags mt-2 flex gap-x-2">
               <Badge className="h-8" variant="green" title="Solved" />
-              <Badge variant="orange" title="PDF" />
+              <Badge
+                variant="orange"
+                title={assignment?.type?.toUpperCase() || "PDF"}
+              />
             </div>
           </div>
         </div>
         <div className="deadline px-8">
-          <Badge variant="red" title="2 days" />
+          <Badge
+            variant={handleDuePriority(assignment.dueDate) || "green"}
+            title={handleDueDate(assignment.dueDate) || ""}
+          />
         </div>
       </Link>
     </div>
