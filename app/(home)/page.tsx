@@ -4,6 +4,7 @@ import { useAtom } from "jotai";
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import UserButton from "~/components/Header/UserButton/UserButton";
+import SubjectCardLoader from "~/components/Loaders/SubjectCardLoader";
 import SubjectCard from "~/components/SubjectCard";
 import { sidebarExpandedAtom } from "~/context/atom";
 
@@ -32,23 +33,26 @@ const Page = () => {
   }, [setIsSidebarExpanded]);
 
   const [courses, setCourses] = React.useState<classRoomProp[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   useEffect(() => {
     try {
       const fetchData = async () => {
+        setIsLoading(true);
         const response = await fetch(
           `${backendUrl}/api/class/${classId}/courses`,
         );
         const data = await response.json();
         setCourses(data);
+        setIsLoading(false);
       };
       fetchData();
     } catch (error) {
       console.log(error);
+      setIsLoading(false);
     }
   }, [classId]);
 
-  console.log(courses);
   return (
     <div>
       <div className="">
@@ -57,9 +61,15 @@ const Page = () => {
         </h1>
       </div>
       <div className="grid w-full grid-cols-3 gap-6">
-        {courses?.map((course) => (
-          <SubjectCard key={course.id} course={course} />
-        ))}
+        {isLoading ? (
+          <SubjectCardLoader />
+        ) : Array.isArray(courses) && courses.length > 0 ? (
+          courses.map((course) => (
+            <SubjectCard key={course.id} course={course} />
+          ))
+        ) : (
+          <p>No courses available</p>
+        )}
       </div>
     </div>
   );

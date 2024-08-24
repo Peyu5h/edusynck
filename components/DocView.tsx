@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import DocViewer, {
   DocViewerRenderers,
   IDocument,
@@ -14,6 +14,8 @@ import pdfToText from "react-pdftotext";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
 import "pdfjs-dist/build/pdf.worker.min.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Button } from "./ui/button";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -30,33 +32,30 @@ const LoadingRenderer: React.FC<{
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-const DocView: React.FC = () => {
-  const doc: IDocument[] = [
-    // {
-    //   uri: "https://academiaa.onrender.com/api/admin/file/1VdPSV1gDrMOUCNhR2Xes4BwEavALYXlD",
-    //   fileType: "jpeg",
-    //   fileName: "test.docx",
-    // },
-    {
-      uri: "https://academiaa.onrender.com/api/admin/file/141J5fh9QdZQ1aT4AzoC_eK26UDQrwHiG",
-      fileType: "pdf",
-      fileName: "test.pdf",
-    },
-    // {
-    //   uri: "https://academiaa.onrender.com/api/admin/file/141J5fh9QdZQ1aT4AzoC_eK26UDQrwHiG",
-    //   fileType: "pdf",
-    //   fileName: "test.pdf",
-    // },
-    // {
-    //   uri: "https://academiaa.onrender.com/api/admin/file/1LLAYIB7637x4Z2m_LYPTzkrGFq1OYFrb",
-    //   fileType: "pptx",
-    //   fileName: "test.pptx",
-    // },
-  ];
-
-  const [selectedDoc, setSelectedDoc] = useState<IDocument>(doc[0]);
+const DocView: React.FC<{
+  uri: string;
+  fileType: string;
+}> = ({ uri, fileType }: { uri: string; fileType: string }) => {
+  const [doc, setDoc] = useState<IDocument[]>([]);
+  const [selectedDoc, setSelectedDoc] = useState<IDocument | null>(null);
   const [extractedText, setExtractedText] = useState<string>("");
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (uri && fileType) {
+      const newDoc: IDocument[] = [
+        {
+          uri: uri,
+          fileType: fileType,
+          fileName: `test.${fileType}`,
+        },
+      ];
+      setDoc(newDoc);
+      setSelectedDoc(newDoc[0]);
+    }
+  }, [uri, fileType]);
+
+  console.log(fileType);
 
   const extractTextFromPDF = async (url: string): Promise<string> => {
     try {
@@ -150,10 +149,14 @@ const DocView: React.FC = () => {
 
   useEffect(() => {
     const extractText = async () => {
+      if (!selectedDoc || !selectedDoc.fileType) {
+        return;
+      }
+
       setIsExtracting(true);
       try {
         let text = "";
-        switch (selectedDoc.fileType?.toLowerCase()) {
+        switch (selectedDoc.fileType.toLowerCase()) {
           case "pdf":
             text = await extractTextFromPDF(selectedDoc.uri);
             break;
@@ -183,25 +186,78 @@ const DocView: React.FC = () => {
     extractText();
   }, [selectedDoc]);
 
+  // ai stuff
+  const [response, setResponse] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState("");
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const fileInputRef = useRef(null);
+  const genAI = useRef(
+    new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY as string),
+  );
+
+  const generatePrompt = useCallback(() => {
+    return `Please provide a concise summary of the following text, highlighting the main points and key information:
+
+${extractedText}
+
+Summary:`;
+  }, [extractedText]);
+
+  const generateResponse = useCallback(async () => {
+    const prompt = generatePrompt();
+    if (!prompt) {
+      setError("No text to summarize.");
+      return;
+    }
+    setError("");
+    setIsGenerating(true);
+    try {
+      const model = genAI.current.getGenerativeModel({
+        model: "gemini-1.5-flash-latest",
+      });
+      const result = await model.generateContentStream(prompt);
+      let fullResponse = "";
+      for await (const chunk of result.stream) {
+        fullResponse += chunk.text();
+        setResponse(fullResponse);
+      }
+    } catch (error) {
+      console.error("Error generating content:", error);
+      setError(
+        "An error occurred while generating the response. Please try again later.",
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [generatePrompt]);
+
+  const handleGenerate = () => {
+    setResponse("");
+    generateResponse();
+  };
+
   return (
     <div className="flex h-full w-full">
       <div className="scrollbar h-full w-[30rem] overflow-y-scroll">
-        <DocViewer
-          prefetchMethod="GET"
-          style={{ borderRadius: "10px", height: "100%" }}
-          documents={doc}
-          config={{
-            header: {
-              disableHeader: true,
-              disableFileName: false,
-              retainURLParams: false,
-            },
-            loadingRenderer: {
-              overrideComponent: LoadingRenderer,
-            },
-          }}
-          pluginRenderers={DocViewerRenderers}
-        />
+        {doc.length > 0 && (
+          <DocViewer
+            prefetchMethod="GET"
+            style={{ borderRadius: "10px", height: "100%" }}
+            documents={doc}
+            config={{
+              header: {
+                disableHeader: true,
+                disableFileName: false,
+                retainURLParams: false,
+              },
+              loadingRenderer: {
+                overrideComponent: LoadingRenderer,
+              },
+            }}
+            pluginRenderers={DocViewerRenderers}
+          />
+        )}
       </div>
       <div className="ml-4 w-[30rem] overflow-y-auto rounded border border-gray-200 p-4">
         <h2 className="mb-2 text-xl font-bold">Extracted Text</h2>
@@ -210,6 +266,20 @@ const DocView: React.FC = () => {
         ) : (
           <pre className="whitespace-pre-wrap">{extractedText}</pre>
         )}
+      </div>
+      <div className="flex h-full w-96 flex-col">
+        <div className="scrollbar mb-4 h-[80vh] overflow-y-scroll rounded bg-gray-800 p-2 text-gray-300">
+          {
+            // <MarkdownRender content={response} />
+            <h1>{response}</h1> ||
+              error ||
+              "Upload a PDF and click 'Summarize PDF' to generate a summary."
+          }
+          {isGenerating && <span className="animate-pulse">|</span>}
+        </div>
+        <Button onClick={handleGenerate}>
+          {isGenerating ? "Generating..." : "Summarize PDF"}
+        </Button>
       </div>
     </div>
   );

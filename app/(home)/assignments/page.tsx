@@ -4,6 +4,7 @@ import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import AssignmentCard from "~/components/AssignmentCard";
+import AssignmentLoader from "~/components/Loaders/AssignmentLoader";
 import { Button } from "~/components/ui/button";
 import { sidebarExpandedAtom } from "~/context/atom";
 
@@ -12,6 +13,7 @@ export default function Assignments() {
     useAtom(sidebarExpandedAtom);
   const [assignments, setAssignments] = useState<any[]>([]);
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const [isLoading, setIsLoading] = useState(true);
 
   const user = useSelector((state: any) => state.user.user);
   const classId = user?.classId;
@@ -21,21 +23,25 @@ export default function Assignments() {
   }, [setIsSidebarExpanded]);
 
   useEffect(() => {
-    try {
-      const fetchData = async () => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
         const response = await fetch(
           `${backendUrl}/api/admin/${classId}/assignments`,
         );
         const data = await response.json();
         setAssignments(data);
-      };
-      fetchData();
-    } catch (error) {
-      console.log(error);
-    }
-  }, []);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  console.log(assignments);
+    if (classId) {
+      fetchData();
+    }
+  }, [classId, backendUrl]);
 
   return (
     <div>
@@ -56,9 +62,17 @@ export default function Assignments() {
         </Button>
       </div>
       <div className="grid w-full grid-cols-1 gap-6">
-        {assignments.map((assignment) => (
-          <AssignmentCard key={assignment.id} assignment={assignment} />
-        ))}
+        {isLoading ? (
+          <div>
+            <AssignmentLoader />
+          </div>
+        ) : assignments.length > 0 ? (
+          assignments.map((assignment) => (
+            <AssignmentCard key={assignment.id} assignment={assignment} />
+          ))
+        ) : (
+          <div>No assignments found</div>
+        )}
       </div>
     </div>
   );
