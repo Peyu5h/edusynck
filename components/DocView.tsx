@@ -16,6 +16,7 @@ import * as pdfjsLib from "pdfjs-dist";
 import "pdfjs-dist/build/pdf.worker.min.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Button } from "./ui/button";
+import MarkdownRenderer from "./MarkdownRender";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -269,12 +270,9 @@ Summary:`;
       </div>
       <div className="flex h-full w-96 flex-col">
         <div className="scrollbar mb-4 h-[80vh] overflow-y-scroll rounded bg-gray-800 p-2 text-gray-300">
-          {
-            // <MarkdownRender content={response} />
-            <h1>{response}</h1> ||
-              error ||
-              "Upload a PDF and click 'Summarize PDF' to generate a summary."
-          }
+          {<MarkdownRenderer content={response} /> ||
+            error ||
+            "Upload a PDF and click 'Summarize PDF' to generate a summary."}
           {isGenerating && <span className="animate-pulse">|</span>}
         </div>
         <Button onClick={handleGenerate}>
