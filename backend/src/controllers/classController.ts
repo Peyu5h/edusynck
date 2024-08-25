@@ -54,6 +54,24 @@ export const assignCourse = async (req, res) => {
   }
 };
 
+export const getOneCourse = async (req, res) => {
+  const { courseId } = req.params;
+
+  try {
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+    });
+
+    if (!course) {
+      return res.status(404).json({ error: "Course not found" });
+    }
+
+    res.status(200).json(course);
+  } catch (error) {
+    res.status(500).json({ error: "failed", message: error.message });
+  }
+};
+
 export const getCourses = async (req, res) => {
   const { classId } = req.params;
 

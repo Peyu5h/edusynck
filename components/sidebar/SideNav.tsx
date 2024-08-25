@@ -19,8 +19,10 @@ import {
 import { Separator } from "@radix-ui/react-select";
 import { useAtom } from "jotai";
 import { sidebarExpandedAtom } from "~/context/atom";
+import { usePathname } from "next/navigation";
 
-export default function SideNav() {
+export default function SideNav({ courses }: { courses: any }) {
+  const pathname = usePathname();
   const [isSidebarExpanded, setIsSidebarExpanded] =
     useAtom(sidebarExpandedAtom);
   const [isClassroomsOpen, setIsClassroomsOpen] = useState(true);
@@ -29,20 +31,21 @@ export default function SideNav() {
 
   useEffect(() => {
     setIsClient(true);
-    setActivePath(window.location.pathname);
   }, []);
+
   useEffect(() => {
-    if (!isSidebarExpanded) {
-      setIsClassroomsOpen(false);
-    }
-  }, [isSidebarExpanded]);
-  const navItems = NavItems();
+    setActivePath(pathname);
+  }, [pathname]);
 
   useEffect(() => {
     if (!isSidebarExpanded) {
       setIsClassroomsOpen(false);
     }
   }, [isSidebarExpanded]);
+
+  const navItems = NavItems();
+
+  const getFirstCourseId = () => (courses.length > 0 ? courses[0].id : "");
 
   const toggleSidebar = () => {
     setIsSidebarExpanded(!isSidebarExpanded);
@@ -53,7 +56,17 @@ export default function SideNav() {
   };
 
   if (!isClient) {
-    return null; // or a loading spinner
+    return null;
+  }
+
+  function formatCourseName(name: string): string {
+    return name
+      .replace(/TE|SE|FE|BR|CMPN|INFT|ECS|EXTC|-|\d+|%20/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .split(" ")
+      .slice(0, 2)
+      .join("-");
   }
 
   return (
@@ -109,10 +122,14 @@ export default function SideNav() {
                               <SideNavItem
                                 label={item.name}
                                 icon={item.icon}
-                                path={item.href}
+                                path={`/classrooms/${getFirstCourseId()}`}
                                 active={item.active || isAnyClassroomActive}
                                 isSidebarExpanded={isSidebarExpanded}
-                                onClick={() => handleNavItemClick(item.href)}
+                                onClick={() =>
+                                  handleNavItemClick(
+                                    `/classrooms/${getFirstCourseId()}`,
+                                  )
+                                }
                               />
                               <ChevronRight
                                 size={16}
@@ -128,24 +145,21 @@ export default function SideNav() {
                           </CollapsibleTrigger>
                           <CollapsibleContent>
                             <div className="my-4 flex flex-col pl-6">
-                              {[
-                                "TCS",
-                                "Database-warehousing",
-                                "Internet-Programing",
-                                "Software-engineering",
-                              ].map((subject) => (
+                              {courses.map((course: any) => (
                                 <SideSubjectitems
-                                  key={subject}
-                                  label={subject}
+                                  key={course.id}
+                                  label={formatCourseName(course.name)}
                                   icon={null}
-                                  path={`/classrooms/${subject}`}
+                                  path={`/classrooms/${course.id}`}
                                   active={
-                                    activePath === `/classrooms/${subject}`
+                                    activePath === `/classrooms/${course.id}`
                                   }
                                   isSidebarExpanded={true}
                                   isClassroom
                                   onClick={() =>
-                                    handleNavItemClick(`/classrooms/${subject}`)
+                                    handleNavItemClick(
+                                      `/classrooms/${course.id}`,
+                                    )
                                   }
                                 />
                               ))}

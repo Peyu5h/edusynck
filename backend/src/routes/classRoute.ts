@@ -1,12 +1,12 @@
 import express from "express";
 import trimrRequest from "trim-request";
-import { login, register } from "../controllers/authController.js";
 import {
   assignCourse,
   create,
   getAssignments,
   getCourses,
   getMaterials,
+  getOneCourse,
 } from "../controllers/classController.js";
 import { googleAuthMiddleware } from "../middlewares/googleAuthMiddleware.js";
 
@@ -28,5 +28,7 @@ router
 router
   .route("/:classId/course/:courseId/materials")
   .get(trimrRequest.all, googleAuthMiddleware, getMaterials);
+
+router.route("/:courseId").get(getOneCourse);
 
 export default router;

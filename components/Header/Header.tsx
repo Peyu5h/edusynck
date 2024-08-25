@@ -17,6 +17,8 @@ const Header = () => {
     console.log(path.includes("assignments/"));
   }, [path]);
 
+  const firstName = user?.name.split(" ")[0];
+
   return (
     <div>
       <div className="mb-2 flex w-full items-center justify-between rounded-xl px-4 pt-4">
@@ -29,7 +31,7 @@ const Header = () => {
           </div>
         ) : (
           <div className="font-antic text-4xl">
-            Good evening <span className="text-pri">Piyush</span>
+            Good evening <span className="text-pri">{firstName}</span>
           </div>
         )}
 

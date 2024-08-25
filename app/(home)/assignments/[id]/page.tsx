@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAtom } from "jotai";
 import { sidebarExpandedAtom } from "~/context/atom";
 import DocView from "~/components/DocView";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Button } from "~/components/ui/button";
 

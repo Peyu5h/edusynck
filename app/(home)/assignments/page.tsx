@@ -11,36 +11,42 @@ import { sidebarExpandedAtom } from "~/context/atom";
 export default function Assignments() {
   const [isSidebarExpanded, setIsSidebarExpanded] =
     useAtom(sidebarExpandedAtom);
-  const [assignments, setAssignments] = useState<any[]>([]);
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const [isLoading, setIsLoading] = useState(true);
+  const [assignments, setAssignments] = useState([]);
 
   const user = useSelector((state: any) => state.user.user);
   const classId = user?.classId;
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   useEffect(() => {
     setIsSidebarExpanded(true);
   }, [setIsSidebarExpanded]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAssignments = async () => {
+      if (!classId) {
+        setAssignments([]);
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
+      console.log(`${backendUrl}/api/admin/${classId}/assignments`);
       try {
         const response = await fetch(
           `${backendUrl}/api/admin/${classId}/assignments`,
+          { cache: "force-cache" },
         );
         const data = await response.json();
         setAssignments(data);
       } catch (error) {
         console.log(error);
+        setAssignments([]);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (classId) {
-      fetchData();
-    }
+    fetchAssignments();
   }, [classId, backendUrl]);
 
   return (
@@ -67,7 +73,7 @@ export default function Assignments() {
             <AssignmentLoader />
           </div>
         ) : assignments.length > 0 ? (
-          assignments.map((assignment) => (
+          assignments.map((assignment: any) => (
             <AssignmentCard key={assignment.id} assignment={assignment} />
           ))
         ) : (

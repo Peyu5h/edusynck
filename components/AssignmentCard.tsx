@@ -82,7 +82,9 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment }) => {
   return (
     <div>
       <Link
-        href={`/assignments/${material.id}`}
+        href={{
+          pathname: `/assignments/${material.id}`,
+        }}
         className="flex w-full cursor-pointer items-center justify-between overflow-hidden rounded-lg border-[1px] border-transparent bg-bground2 duration-150 hover:border-[1px] hover:border-zinc-700"
       >
         <div className="left flex gap-x-4">

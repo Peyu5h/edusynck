@@ -45,13 +45,7 @@ export const NavItems = () => {
       active: isNavItemActive("/chats"),
       position: "top",
     },
-    {
-      name: "Polls",
-      href: "/polls",
-      icon: <MdOutlinePoll size={20} />,
-      active: isNavItemActive("/polls"),
-      position: "top",
-    },
+
     {
       name: "Settings",
       href: "/settings",
