@@ -6,6 +6,7 @@ const nextConfig = {
       "lh3.googleusercontent.com",
       "localhost",
       "academiaa.onrender.com",
+      "classroom.google.com",
     ],
   },
 };

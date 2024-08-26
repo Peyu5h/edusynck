@@ -46,7 +46,6 @@ export default function SideNav() {
   }, [isSidebarExpanded]);
 
   const { data: courses, isLoading, error } = useCourses();
-  console.log(courses);
 
   if (isLoading) return <SideNavLoader />;
   if (error)

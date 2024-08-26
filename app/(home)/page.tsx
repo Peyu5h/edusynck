@@ -30,42 +30,6 @@ const Page: React.FC = () => {
     setIsSidebarExpanded(true);
   }, [setIsSidebarExpanded]);
 
-  // const fetchData = useCallback(async () => {
-  //   if (!classId) {
-  //     console.log("No classId available");
-  //     setError("No class ID available");
-  //     setIsLoading(false);
-  //     return;
-  //   }
-
-  //   try {
-  //     setIsLoading(true);
-  //     setError(null);
-  //     console.log(`Fetching courses for classId: ${classId}`);
-  //     const response = await fetch(
-  //       `${backendUrl}/api/class/${classId}/courses`,
-  //     );
-  //     if (!response.ok) {
-  //       throw new Error(`HTTP error! status: ${response.status}`);
-  //     }
-  //     const data = await response.json();
-  //     console.log("Fetched courses:", data);
-  //     setCourses(data);
-  //   } catch (error) {
-  //     console.error("Error fetching courses:", error);
-  //     setError("Failed to fetch courses. Please try again.");
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // }, [classId, backendUrl]);
-
-  // useEffect(() => {
-  //   fetchData();
-  // }, [fetchData]);
-
-  // useEffect(() => {
-  //   console.log("Courses state updated:", courses);
-  // }, [courses]);
 
   const loaders = Array.from({ length: 5 });
 

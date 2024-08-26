@@ -7,6 +7,7 @@ import { ClassroomBread } from "~/components/BreadCrump/ClassroomBread";
 import AssignmentLoader from "~/components/Loaders/AssignmentLoader";
 import MaterialLoader from "~/components/Loaders/MaterialLoader";
 import MaterialCard from "~/components/MaterialCard";
+import MaterialFolderCard from "~/components/MaterialFolderCard";
 import { sidebarExpandedAtom } from "~/context/atom";
 import { useUser } from "~/hooks/useUser";
 
@@ -72,21 +73,26 @@ const Page = () => {
 
   useEffect(() => {
     const fetchAssignments = async () => {
+      console.log("Fetching assignments...");
+      console.log("classId:", classId);
+      console.log("course?.googleClassroomId:", course?.googleClassroomId);
+
       if (!classId || !course?.googleClassroomId) {
+        console.log("Missing classId or googleClassroomId, skipping fetch");
         setMaterials([]);
         setIsLoading(false);
         return;
       }
       setIsLoading(true);
       try {
-        const response = await fetch(
-          `${backendUrl}/api/class/${classId}/course/${course.googleClassroomId}/materials`,
-          { cache: "force-cache" },
-        );
+        const url = `${backendUrl}/api/class/${classId}/course/${course.googleClassroomId}/materials`;
+        console.log("Fetching from URL:", url);
+        const response = await fetch(url, { cache: "force-cache" });
         if (!response.ok) {
-          throw new Error("Failed to fetch materials");
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
+        console.log("Fetched materials:", data);
         setMaterials(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Error fetching materials:", error);
@@ -113,7 +119,7 @@ const Page = () => {
       ) : materials.length > 0 ? (
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {materials.map((material) => (
-            <MaterialCard key={material.id} material={material} />
+            <MaterialFolderCard key={material.id} material={material} />
           ))}
         </div>
       ) : (

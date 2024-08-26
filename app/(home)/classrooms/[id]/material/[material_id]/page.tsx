@@ -4,17 +4,30 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ClassroomBread } from "~/components/BreadCrump/ClassroomBread";
 import MaterialLoader from "~/components/Loaders/MaterialLoader";
+import MaterialCard from "~/components/MaterialCard";
 
 interface Course {
   id: string;
   name: string;
   googleClassroomId: string;
-  // Add other course properties as needed
 }
 
 interface Material {
+  id: string;
   title: string;
-  // Add other material properties as needed
+  alternateLink: string;
+  files: {
+    id: string;
+    title: string;
+    alternateLink: string;
+    thumbnailUrl: string;
+    extension: string;
+  }[];
+  links: {
+    url: string;
+    title: string;
+    thumbnailUrl: string;
+  }[];
 }
 
 export default function MaterialPage() {
@@ -30,55 +43,54 @@ export default function MaterialPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCourse = async () => {
-      if (!courseId) return;
+    const fetchCourseAndMaterial = async () => {
+      if (!courseId || !materialId) return;
+      setIsLoading(true);
       try {
-        const response = await fetch(`${backendUrl}/api/class/${courseId}`);
-        if (!response.ok) {
+        // Fetch course
+        const courseResponse = await fetch(
+          `${backendUrl}/api/class/${courseId}`,
+        );
+        if (!courseResponse.ok) {
           throw new Error("Failed to fetch course");
         }
-        const data = await response.json();
-        setCourse(data);
-      } catch (error) {
-        console.error("Error fetching course:", error);
-        setError("Failed to load course information.");
-      }
-    };
+        const courseData = await courseResponse.json();
+        setCourse(courseData);
 
-    fetchCourse();
-  }, [courseId, backendUrl]);
-
-  useEffect(() => {
-    const fetchMaterial = async () => {
-      if (!course || !materialId) return;
-
-      try {
-        const url = `${backendUrl}/api/class/${courseId}/course/${course.googleClassroomId}/material/${materialId}`;
-        console.log("Fetching material from:", url);
-
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setMaterial(data);
-      } catch (e) {
-        console.error("Failed to fetch material:", e);
-        setError(
-          "Failed to load material. It may not exist or you may not have permission to view it.",
+        // Fetch materials
+        const materialsResponse = await fetch(
+          `${backendUrl}/api/class/${courseId}/course/${courseData.googleClassroomId}/materials`,
         );
+        if (!materialsResponse.ok) {
+          throw new Error("Failed to fetch materials");
+        }
+        const materialsData = await materialsResponse.json();
+
+        // Find the specific material
+        const specificMaterial = materialsData.find(
+          (m: Material) => m.id === materialId,
+        );
+        if (!specificMaterial) {
+          throw new Error("Material not found");
+        }
+        setMaterial(specificMaterial);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setError("Failed to load course or material information.");
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (course) {
-      fetchMaterial();
-    }
-  }, [course, materialId, courseId, backendUrl]);
+    fetchCourseAndMaterial();
+  }, [courseId, materialId, backendUrl]);
 
   if (error) {
     return <div>Error: {error}</div>;
+  }
+
+  if (isLoading) {
+    return <MaterialLoader />;
   }
 
   return (
@@ -87,7 +99,24 @@ export default function MaterialPage() {
         courseName={course?.name}
         materialName={material?.title}
       />
-      {isLoading ? <MaterialLoader /> : <div className="mt-8">Materials</div>}
+      {material && (
+        <div className="mt-6">
+          <h2 className="mb-4 text-2xl font-bold">{material.title}</h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {material.files.length > 0 &&
+              material.files.map((file) => (
+                <MaterialCard key={file.id} material={file} type="file" />
+              ))}
+            {material.links.length > 0 &&
+              material.links.map((link, index) => (
+                <MaterialCard key={index} material={link} type="link" />
+              ))}
+            {material.files.length === 0 && material.links.length === 0 && (
+              <p>No files or links available for this material.</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
