@@ -27,7 +27,11 @@ export const register = async (req, res) => {
                 classId: classExists.id,
             },
             include: {
-                class: true,
+                class: {
+                    include: {
+                        courses: true,
+                    },
+                },
                 notifications: true,
                 assignments: true,
                 votedPolls: true,
@@ -41,7 +45,11 @@ export const register = async (req, res) => {
         res.status(201).json({
             message: "success",
             token,
-            user: userWithoutPassword,
+            user: {
+                ...userWithoutPassword,
+                courseId: user.class.courses[0]?.id,
+                googleClassroomId: user.class.courses[0]?.googleClassroomId,
+            },
         });
     }
     catch (error) {
@@ -55,7 +63,11 @@ export const login = async (req, res) => {
         const user = await prisma.user.findUnique({
             where: { email },
             include: {
-                class: true,
+                class: {
+                    include: {
+                        courses: true,
+                    },
+                },
                 notifications: true,
                 assignments: true,
                 votedPolls: true,
@@ -76,7 +88,11 @@ export const login = async (req, res) => {
         res.status(200).json({
             message: "success",
             token,
-            user: userWithoutPassword,
+            user: {
+                ...userWithoutPassword,
+                courseId: user.class.courses[0]?.id,
+                googleClassroomId: user.class.courses[0]?.googleClassroomId,
+            },
         });
     }
     catch (error) {

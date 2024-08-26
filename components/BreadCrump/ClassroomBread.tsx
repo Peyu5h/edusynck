@@ -9,7 +9,15 @@ import {
   BreadcrumbSeparator,
 } from "~/components/ui/breadcrumb";
 
-export function ClassroomBread({ courseName }: { courseName?: string }) {
+export function ClassroomBread({
+  courseName,
+  materialFolderName,
+  materialName,
+}: {
+  courseName?: string;
+  materialFolderName?: string;
+  materialName?: string;
+}) {
   return (
     <Breadcrumb>
       <BreadcrumbList>
@@ -26,8 +34,26 @@ export function ClassroomBread({ courseName }: { courseName?: string }) {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbPage>{courseName}</BreadcrumbPage>
+          <BreadcrumbLink>
+            <Link href="/">{courseName}</Link>
+          </BreadcrumbLink>
         </BreadcrumbItem>
+        {materialFolderName && (
+          <>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{materialFolderName}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </>
+        )}
+        {materialName && (
+          <>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{materialName}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </>
+        )}
       </BreadcrumbList>
     </Breadcrumb>
   );

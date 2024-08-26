@@ -3,11 +3,12 @@
 import { useAtom } from "jotai";
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import { ClassroomBread } from "~/components/BreadCrump/ClassroomBread";
 import AssignmentLoader from "~/components/Loaders/AssignmentLoader";
+import MaterialLoader from "~/components/Loaders/MaterialLoader";
 import MaterialCard from "~/components/MaterialCard";
 import { sidebarExpandedAtom } from "~/context/atom";
+import { useUser } from "~/hooks/useUser";
 
 interface Course {
   id: string;
@@ -39,8 +40,8 @@ const Page = () => {
     useAtom(sidebarExpandedAtom);
   const [isLoading, setIsLoading] = useState(true);
   const [materials, setMaterials] = useState<Material[]>([]);
-  const user = useSelector((state: any) => state.user.user);
 
+  const { user } = useUser();
   const classId = user?.classId;
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -106,7 +107,7 @@ const Page = () => {
       <ClassroomBread courseName={course?.name} />
       {isLoading ? (
         <div>
-          <AssignmentLoader />
+          <MaterialLoader />
         </div>
       ) : materials.length > 0 ? (
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

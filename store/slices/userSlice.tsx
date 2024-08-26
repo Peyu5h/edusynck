@@ -24,3 +24,18 @@ const userSlice = createSlice({
 export const { loginUser, logoutUser, hydrateUser } = userSlice.actions;
 
 export default userSlice.reducer;
+
+export const fetchUserDetails = async (userId: string): Promise<User> => {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/getUser`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error("Failed to fetch user details");
+  }
+  return response.json();
+};

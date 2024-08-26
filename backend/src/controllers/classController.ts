@@ -243,6 +243,8 @@ export const getMaterials = async (req, res) => {
         const organizedContent = {
           id: material.id,
           title: material.title,
+          googleClassroomId: courseId,
+
           alternateLink: material.alternateLink,
           links: [],
           files: [],
@@ -280,6 +282,62 @@ export const getMaterials = async (req, res) => {
     console.error("Error fetching materials:", error);
     res.status(500).json({
       error: "Failed to fetch materials",
+      message: error.message,
+    });
+  }
+};
+
+export const getOneMaterial = async (req, res) => {
+  const { courseId, materialId } = req.params;
+
+  try {
+    const oAuth2Client = req["googleAuth"];
+    const classroom = google.classroom({ version: "v1", auth: oAuth2Client });
+
+    const materialResponse = await classroom.courses.courseWorkMaterials.get({
+      courseId: courseId,
+      id: materialId,
+      fields: "id,title,materials,alternateLink",
+    });
+
+    const material = materialResponse.data;
+    const organizedContent = {
+      id: material.id,
+      googleClassroomId: courseId,
+      title: material.title,
+      alternateLink: material.alternateLink,
+      links: [],
+      files: [],
+    };
+
+    if (material.materials) {
+      material.materials.forEach((item) => {
+        if (item.link) {
+          organizedContent.links.push({
+            url: item.link.url,
+            title: item.link.title,
+            thumbnailUrl: item.link.thumbnailUrl,
+          });
+        } else if (item.driveFile) {
+          const file = item.driveFile.driveFile;
+          const extension = extname(file.title).toLowerCase().slice(1);
+          organizedContent.files.push({
+            id: file.id,
+            title: file.title,
+            alternateLink: file.alternateLink,
+            thumbnailUrl: file.thumbnailUrl,
+            extension: extension,
+            type: getFileType(extension),
+          });
+        }
+      });
+    }
+
+    res.json(organizedContent);
+  } catch (error) {
+    console.error("Error fetching material:", error);
+    res.status(500).json({
+      error: "Failed to fetch material",
       message: error.message,
     });
   }

@@ -1,6 +1,6 @@
 import express from "express";
 import trimrRequest from "trim-request";
-import { assignCourse, create, getAssignments, getCourses, getMaterials, getOneCourse, } from "../controllers/classController.js";
+import { assignCourse, create, getAssignments, getCourses, getMaterials, getOneCourse, getOneMaterial, } from "../controllers/classController.js";
 import { googleAuthMiddleware } from "../middlewares/googleAuthMiddleware.js";
 const router = express.Router();
 router.route("/create").post(trimrRequest.all, create);
@@ -16,5 +16,8 @@ router
 router
     .route("/:classId/course/:courseId/materials")
     .get(trimrRequest.all, googleAuthMiddleware, getMaterials);
+router
+    .route("/:classId/course/:courseId/material/:materialId")
+    .get(trimrRequest.all, googleAuthMiddleware, getOneMaterial);
 router.route("/:courseId").get(getOneCourse);
 export default router;

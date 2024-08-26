@@ -1,20 +1,19 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import AssignmentCard from "~/components/AssignmentCard";
 import AssignmentLoader from "~/components/Loaders/AssignmentLoader";
 import { Button } from "~/components/ui/button";
 import { sidebarExpandedAtom } from "~/context/atom";
+import { useUser } from "~/hooks/useUser";
 
 export default function Assignments() {
   const [isSidebarExpanded, setIsSidebarExpanded] =
     useAtom(sidebarExpandedAtom);
-  const [isLoading, setIsLoading] = useState(true);
-  const [assignments, setAssignments] = useState([]);
 
-  const user = useSelector((state: any) => state.user.user);
+  const { user } = useUser();
   const classId = user?.classId;
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -22,33 +21,25 @@ export default function Assignments() {
     setIsSidebarExpanded(true);
   }, [setIsSidebarExpanded]);
 
-  useEffect(() => {
-    const fetchAssignments = async () => {
-      if (!classId) {
-        setAssignments([]);
-        setIsLoading(false);
-        return;
+  const {
+    data: assignments,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["assignments", classId],
+    queryFn: async () => {
+      if (!classId) return [];
+      const response = await fetch(
+        `${backendUrl}/api/admin/${classId}/assignments`,
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch assignments");
       }
-      setIsLoading(true);
-      console.log(`${backendUrl}/api/admin/${classId}/assignments`);
-      try {
-        const response = await fetch(
-          `${backendUrl}/api/admin/${classId}/assignments`,
-          { cache: "force-cache" },
-        );
-        const data = await response.json();
-        setAssignments(data);
-      } catch (error) {
-        console.log(error);
-        setAssignments([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAssignments();
-  }, [classId, backendUrl]);
-
+      return response.json();
+    },
+    enabled: !!classId,
+    staleTime: 10 * 60 * 1000, //10 min
+  });
   return (
     <div>
       <div className="">

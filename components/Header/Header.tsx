@@ -2,13 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import UserButton from "./UserButton/UserButton";
-import { useSelector } from "react-redux";
 import Notification from "./Notification";
 import { usePathname } from "next/navigation";
+import { useUser } from "~/hooks/useUser";
 
 const Header = () => {
-  const user = useSelector((state: any) => state.user.user);
   const path = usePathname();
+  const { user, isLoading, error } = useUser();
 
   const [isAssignment, setIsAssignment] = useState(false);
 

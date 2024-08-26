@@ -20,8 +20,10 @@ import { Separator } from "@radix-ui/react-select";
 import { useAtom } from "jotai";
 import { sidebarExpandedAtom } from "~/context/atom";
 import { usePathname } from "next/navigation";
+import { useCourses } from "~/hooks/useGetCourses";
+import SideNavLoader from "../Loaders/SideNavLoader";
 
-export default function SideNav({ courses }: { courses: any }) {
+export default function SideNav() {
   const pathname = usePathname();
   const [isSidebarExpanded, setIsSidebarExpanded] =
     useAtom(sidebarExpandedAtom);
@@ -43,9 +45,23 @@ export default function SideNav({ courses }: { courses: any }) {
     }
   }, [isSidebarExpanded]);
 
+  const { data: courses, isLoading, error } = useCourses();
+  console.log(courses);
+
+  if (isLoading) return <SideNavLoader />;
+  if (error)
+    return (
+      <div>
+        <SideNavLoader />
+      </div>
+    );
+
   const navItems = NavItems();
 
-  const getFirstCourseId = () => (courses.length > 0 ? courses[0].id : "");
+  if (!courses) return null;
+
+  const getFirstCourseId = () =>
+    courses && courses.length > 0 ? courses[0].id : "";
 
   const toggleSidebar = () => {
     setIsSidebarExpanded(!isSidebarExpanded);
@@ -53,6 +69,11 @@ export default function SideNav({ courses }: { courses: any }) {
 
   const handleNavItemClick = (path: string) => {
     setActivePath(path);
+  };
+
+  // Add this function to check if a path is active
+  const isPathActive = (path: string) => {
+    return activePath.startsWith(path);
   };
 
   if (!isClient) {
@@ -145,15 +166,15 @@ export default function SideNav({ courses }: { courses: any }) {
                           </CollapsibleTrigger>
                           <CollapsibleContent>
                             <div className="my-4 flex flex-col pl-6">
-                              {courses.map((course: any) => (
+                              {courses?.map((course: any) => (
                                 <SideSubjectitems
                                   key={course.id}
                                   label={formatCourseName(course.name)}
                                   icon={null}
                                   path={`/classrooms/${course.id}`}
-                                  active={
-                                    activePath === `/classrooms/${course.id}`
-                                  }
+                                  active={isPathActive(
+                                    `/classrooms/${course.id}`,
+                                  )} // Update this line
                                   isSidebarExpanded={true}
                                   isClassroom
                                   onClick={() =>

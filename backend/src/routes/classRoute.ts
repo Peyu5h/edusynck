@@ -7,6 +7,7 @@ import {
   getCourses,
   getMaterials,
   getOneCourse,
+  getOneMaterial,
 } from "../controllers/classController.js";
 import { googleAuthMiddleware } from "../middlewares/googleAuthMiddleware.js";
 
@@ -28,6 +29,9 @@ router
 router
   .route("/:classId/course/:courseId/materials")
   .get(trimrRequest.all, googleAuthMiddleware, getMaterials);
+router
+  .route("/:classId/course/:courseId/material/:materialId")
+  .get(trimrRequest.all, googleAuthMiddleware, getOneMaterial);
 
 router.route("/:courseId").get(getOneCourse);
 
