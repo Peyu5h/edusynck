@@ -31,6 +31,7 @@
     "cobe": "^0.6.3",
     "emoji-picker-react": "^4.11.1",
     "formik": "^2.4.6",
+    "framer-motion": "^11.3.30",
     "jotai": "^2.9.2",
     "lucide-react": "^0.419.0",
     "mammoth": "^1.8.0",

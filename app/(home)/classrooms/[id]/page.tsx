@@ -113,7 +113,7 @@ const Page = () => {
     <div>
       <ClassroomBread courseName={course?.name} />
       {isLoading ? (
-        <div>
+        <div className="mt-6">
           <MaterialLoader />
         </div>
       ) : materials.length > 0 ? (
@@ -123,7 +123,9 @@ const Page = () => {
           ))}
         </div>
       ) : (
-        <div>No materials available</div>
+        <div>
+          <MaterialLoader />
+        </div>
       )}
     </div>
   );

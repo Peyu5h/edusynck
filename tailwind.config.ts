@@ -87,7 +87,7 @@ const config = {
         green: "#15A753",
         greenBg: "#1D442E",
         blue: "#2283DE",
-        bluebg: "#253B56",
+        blueBg: "#253B56",
         orange: "#CA7D18",
         orangeBg: "#5B401A",
       },

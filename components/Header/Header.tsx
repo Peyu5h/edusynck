@@ -9,12 +9,20 @@ import { useUser } from "~/hooks/useUser";
 const Header = () => {
   const path = usePathname();
   const { user, isLoading, error } = useUser();
-
   const [isAssignment, setIsAssignment] = useState(false);
+  const [greeting, setGreeting] = useState("Good morning");
 
   useEffect(() => {
     setIsAssignment(path.includes("assignments/"));
-    console.log(path.includes("assignments/"));
+
+    const currentHour = new Date().getHours();
+    setGreeting(
+      currentHour >= 12 && currentHour < 18
+        ? "Good afternoon"
+        : currentHour >= 18
+          ? "Good evening"
+          : "Good morning",
+    );
   }, [path]);
 
   const firstName = user?.name.split(" ")[0];
@@ -31,7 +39,7 @@ const Header = () => {
           </div>
         ) : (
           <div className="font-antic text-4xl">
-            Good evening <span className="text-pri">{firstName}</span>
+            {greeting} <span className="text-pri">{firstName}</span>
           </div>
         )}
 

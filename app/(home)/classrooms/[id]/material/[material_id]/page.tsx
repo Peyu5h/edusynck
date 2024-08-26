@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { ClassroomBread } from "~/components/BreadCrump/ClassroomBread";
 import MaterialLoader from "~/components/Loaders/MaterialLoader";
 import MaterialCard from "~/components/MaterialCard";
+import { LuDot } from "react-icons/lu";
+import { GoDot } from "react-icons/go";
 
 interface Course {
   id: string;
@@ -101,15 +103,24 @@ export default function MaterialPage() {
       />
       {material && (
         <div className="mt-6">
-          <h2 className="mb-4 text-2xl font-bold">{material.title}</h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {material.files.length > 0 &&
               material.files.map((file) => (
-                <MaterialCard key={file.id} material={file} type="file" />
+                <MaterialCard
+                  key={file.id}
+                  material={file}
+                  type="file"
+                  title={material.title}
+                />
               ))}
             {material.links.length > 0 &&
               material.links.map((link, index) => (
-                <MaterialCard key={index} material={link} type="link" />
+                <MaterialCard
+                  key={index}
+                  material={link}
+                  type="link"
+                  title={material.title}
+                />
               ))}
             {material.files.length === 0 && material.links.length === 0 && (
               <p>No files or links available for this material.</p>
