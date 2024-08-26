@@ -32,10 +32,11 @@ interface Material {
   }[];
   links: any[];
 }
+export const dynamic = "force-dynamic";
 
 const Page = () => {
-  const { id } = useParams();
-  const [course, setCourse] = useState<Course>();
+  const { id } = useParams() || {};
+  const [course, setCourse] = useState<Course | null>(null);
   const [isSidebarExpanded, setIsSidebarExpanded] =
     useAtom(sidebarExpandedAtom);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,7 +111,7 @@ const Page = () => {
         <div>
           <MaterialLoader />
         </div>
-      ) : materials?.length > 0 ? (
+      ) : materials.length > 0 ? (
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {materials.map((material) => (
             <MaterialCard key={material.id} material={material} />
