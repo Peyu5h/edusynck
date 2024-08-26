@@ -12,6 +12,7 @@ import { useUser } from "~/hooks/useUser";
 export default function Assignments() {
   const [isSidebarExpanded, setIsSidebarExpanded] =
     useAtom(sidebarExpandedAtom);
+  const [isClient, setIsClient] = useState(false);
 
   const { user } = useUser();
   const classId = user?.classId;
@@ -19,6 +20,7 @@ export default function Assignments() {
 
   useEffect(() => {
     setIsSidebarExpanded(true);
+    setIsClient(true);
   }, [setIsSidebarExpanded]);
 
   const {
@@ -37,9 +39,14 @@ export default function Assignments() {
       }
       return response.json();
     },
-    enabled: !!classId,
+    enabled: !!classId && isClient,
     staleTime: 10 * 60 * 1000, //10 min
   });
+
+  if (!isClient) {
+    return <AssignmentLoader />;
+  }
+
   return (
     <div>
       <div className="">
@@ -63,7 +70,7 @@ export default function Assignments() {
           <div>
             <AssignmentLoader />
           </div>
-        ) : assignments.length > 0 ? (
+        ) : assignments && assignments.length > 0 ? (
           assignments.map((assignment: any) => (
             <AssignmentCard key={assignment.id} assignment={assignment} />
           ))

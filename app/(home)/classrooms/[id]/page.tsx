@@ -32,7 +32,6 @@ interface Material {
   }[];
   links: any[];
 }
-export const dynamic = "force-dynamic";
 
 const Page = () => {
   const { id } = useParams() || {};
