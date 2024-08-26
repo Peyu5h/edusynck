@@ -13,6 +13,7 @@ interface InputFieldProps {
   showPass?: boolean;
   setShowPass?: (show: boolean) => void;
   className?: string;
+  sendMessage?: () => void;
 }
 
 const InputField: FC<InputFieldProps> = ({
@@ -27,6 +28,7 @@ const InputField: FC<InputFieldProps> = ({
   showPass,
   setShowPass,
   className,
+  sendMessage,
 }) => {
   return (
     <div className={`form-group flex flex-col ${className}`}>
@@ -53,6 +55,7 @@ const InputField: FC<InputFieldProps> = ({
           onChange={onChange}
           onBlur={onBlur}
           placeholder={placeholder}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage && sendMessage()}
           required
         />
         {id === "password" && showPass !== undefined && setShowPass && (
