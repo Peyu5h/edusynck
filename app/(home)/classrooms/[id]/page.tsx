@@ -57,7 +57,6 @@ const Page = () => {
           throw new Error("Failed to fetch courses");
         }
         const data = await response.json();
-        console.log(data);
         setCourse(data);
       } catch (error) {
         console.error("Error fetching courses:", error);
@@ -73,7 +72,7 @@ const Page = () => {
 
   useEffect(() => {
     const fetchAssignments = async () => {
-      if (!classId) {
+      if (!classId || !course?.googleClassroomId) {
         setMaterials([]);
         setIsLoading(false);
         return;
@@ -81,14 +80,16 @@ const Page = () => {
       setIsLoading(true);
       try {
         const response = await fetch(
-          `${backendUrl}/api/class/${classId}/course/${course?.googleClassroomId}/materials`,
+          `${backendUrl}/api/class/${classId}/course/${course.googleClassroomId}/materials`,
           { cache: "force-cache" },
         );
+        if (!response.ok) {
+          throw new Error("Failed to fetch materials");
+        }
         const data = await response.json();
-        console.log("heheheh", data);
-        setMaterials(data);
+        setMaterials(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.log(error);
+        console.error("Error fetching materials:", error);
         setMaterials([]);
       } finally {
         setIsLoading(false);
@@ -109,7 +110,7 @@ const Page = () => {
         <div>
           <MaterialLoader />
         </div>
-      ) : materials.length > 0 ? (
+      ) : materials?.length > 0 ? (
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {materials.map((material) => (
             <MaterialCard key={material.id} material={material} />
