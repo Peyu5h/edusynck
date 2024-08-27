@@ -34,7 +34,7 @@ const LoadingRenderer: React.FC<{
 
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-const DocView: React.FC<{
+const MaterialView: React.FC<{
   uri: string;
   fileType: string;
 }> = ({ uri, fileType }: { uri: string; fileType: string }) => {
@@ -283,9 +283,11 @@ Summary:`;
           defaultValue="extractedText"
           className="flex h-full w-full flex-col"
         >
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="extractedText">Extracted Text</TabsTrigger>
             <TabsTrigger value="summary">Summary</TabsTrigger>
+            <TabsTrigger value="youtube">Youtube</TabsTrigger>
+            <TabsTrigger value="quizeMe">Quize Me</TabsTrigger>
           </TabsList>
           <TabsContent
             value="extractedText"
@@ -315,10 +317,21 @@ Summary:`;
               </Button>
             </div>
           </TabsContent>
+
+          <TabsContent value="youtube" className="flex-grow overflow-hidden">
+            <div className="flex h-full flex-col p-4">
+              <div className="scrollbar mb-4 flex-grow overflow-y-auto rounded bg-gray-800 p-2 text-gray-300"></div>
+            </div>
+          </TabsContent>
+          <TabsContent value="quizeMe" className="flex-grow overflow-hidden">
+            <div className="flex h-full flex-col p-4">
+              <div className="scrollbar mb-4 flex-grow overflow-y-auto rounded bg-gray-800 p-2 text-gray-300"></div>
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
     </div>
   );
 };
 
-export default DocView;
+export default MaterialView;
