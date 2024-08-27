@@ -124,7 +124,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment }) => {
             <div className="tags mt-2 flex gap-x-2">
               <Badge className="h-8" variant="green" title="Solved" />
               <Badge
-                variant="orange"
+                variant="blue"
                 title={assignment?.type?.toUpperCase() || "PDF"}
               />
             </div>

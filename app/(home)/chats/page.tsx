@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
-
 import {
   Card,
   CardContent,
@@ -14,13 +13,15 @@ import axios from "axios";
 import { AxiosResponse } from "axios";
 import ChatInput from "~/components/ChatPage/Attachement/ChatInput";
 import Messages from "~/components/ChatPage/Messages";
+import MaterialLoader from "~/components/Loaders/MaterialLoader";
+import SubjectCardLoader from "~/components/Loaders/SubjectCardLoader";
 
 interface Message {
   id: string;
   sender: { id: string; name: string };
   content: string;
-  timestamp: Date;
   files?: any[];
+  createdAt: string; // Changed from Date to string
 }
 
 export default function ChatsPage() {
@@ -39,13 +40,12 @@ export default function ChatsPage() {
       if (user?.classId) {
         newSocket.emit("join_room", { room: user.classId, userId: user.id });
 
-        // fetch from backend
         axios
           .get<Message[]>(
             `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/chat/messages/${user.classId}`,
           )
           .then((response: AxiosResponse<Message[]>) => {
-            setMessages(response.data); // Set the old messages
+            setMessages(response.data);
           })
           .catch((error) => {
             console.error("Failed to fetch old messages:", error);
@@ -83,6 +83,7 @@ export default function ChatsPage() {
         content: inputMessage,
         sender: { id: user.id, name: user.name },
         files: [],
+        createdAt: new Date().toISOString(), // Add this line
       };
       console.log("Sending message:", messageData);
       socket.emit("send_message", messageData);
@@ -91,7 +92,13 @@ export default function ChatsPage() {
   };
 
   if (!user || !user.classId) {
-    return <div>Loading or user not found...</div>;
+    return (
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(6)].map((_, index) => (
+          <SubjectCardLoader key={index} />
+        ))}
+      </div>
+    );
   }
 
   return (
