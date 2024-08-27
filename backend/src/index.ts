@@ -4,14 +4,16 @@ import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import routes from "./routes/index.js";
+import http from "http";
+import prisma from "./config/db.js";
 
 dotenv.config();
 
 const app = express();
-const server = createServer(app);
+const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL,
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });
@@ -27,14 +29,64 @@ app.use("/api", routes);
 io.on("connection", (socket) => {
   console.log("A user connected");
 
-  socket.on("join_room", (data) => {
+  socket.on("join_room", async (data) => {
     socket.join(data.room);
     console.log(`User joined room: ${data.room}`);
+
+    let chat = await prisma.chat.findFirst({
+      where: { name: `Class ${data.room} Chat` },
+    });
+
+    if (!chat) {
+      chat = await prisma.chat.create({
+        data: {
+          name: `Class ${data.room} Chat`,
+          picture: "default_chat_picture_url",
+          ...(data.userId && { users: { connect: { id: data.userId } } }),
+        },
+      });
+    } else if (data.userId) {
+      await prisma.chat.update({
+        where: { id: chat.id },
+        data: { users: { connect: { id: data.userId } } },
+      });
+    }
   });
 
-  socket.on("send_message", (data) => {
-    console.log("Received message:", data);
-    io.to(data.room).emit("receive_message", data);
+  socket.on("send_message", async (data) => {
+    try {
+      const chat = await prisma.chat.findFirst({
+        where: { name: `Class ${data.room} Chat` },
+      });
+
+      if (!chat) {
+        throw new Error("Chat not found");
+      }
+
+      if (!data.content) {
+        throw new Error("Message content is required");
+      }
+
+      const newMessage = await prisma.message.create({
+        data: {
+          content: data.content,
+          sender: { connect: { id: data.sender.id } },
+          chat: { connect: { id: chat.id } },
+          files: data.files || [],
+        },
+        include: {
+          sender: true,
+        },
+      });
+
+      io.to(data.room).emit("receive_message", newMessage);
+    } catch (error) {
+      console.error("Error saving message:", error);
+      socket.emit("message_error", {
+        message: "Failed to save message",
+        error: error.message,
+      });
+    }
   });
 
   socket.on("disconnect", () => {
