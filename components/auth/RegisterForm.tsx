@@ -81,12 +81,11 @@ const RegisterForm = () => {
                     <SelectGroup>
                       <SelectLabel>Class</SelectLabel>
                       <SelectItem value="TE-CMPN">TE-CMPN</SelectItem>
+                      <SelectItem value="TE-ECS">TE-ECS</SelectItem>
                       <SelectItem disabled value="TE-INFT">
                         TE-INFT
                       </SelectItem>
-                      <SelectItem disabled value="TE-ECS">
-                        TE-ECS
-                      </SelectItem>
+
                       <SelectItem disabled value="SE-CMPN">
                         SE-CMPN
                       </SelectItem>

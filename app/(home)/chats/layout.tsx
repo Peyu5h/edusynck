@@ -9,5 +9,5 @@ export default async function HomeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div>{children}</div>;
+  return <div className="overflow-hidden">{children}</div>;
 }

@@ -39,10 +39,10 @@ export const googleAuthMiddleware = async (req, res, next) => {
         next();
     }
     catch (error) {
-        if (error.message === "Authorize but visiting /auth") {
+        if (error.message === "Authorize by visiting /auth") {
             res.status(401).json({
                 error: "Authorization required",
-                message: "Authorize but visiting /auth",
+                message: "Authorize by visiting /auth",
             });
         }
         else {

@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
-import { Button } from "~/components/ui/button";
-import InputField from "~/components/InputBox";
+
 import {
   Card,
   CardContent,
@@ -11,10 +10,10 @@ import {
   CardHeader,
 } from "~/components/ui/card";
 import { useUser } from "~/hooks/useUser";
-import { IoIosSend } from "react-icons/io";
-import Messages from "~/components/Messages";
-import axios from "axios"; // Import axios for API calls
+import axios from "axios";
 import { AxiosResponse } from "axios";
+import ChatInput from "~/components/ChatPage/Attachement/ChatInput";
+import Messages from "~/components/ChatPage/Messages";
 
 interface Message {
   id: string;
@@ -96,34 +95,21 @@ export default function ChatsPage() {
   }
 
   return (
-    <Card className="mx-auto w-full max-w-5xl border-none bg-transparent">
+    <Card className="mx-auto flex h-[83vh] w-full max-w-6xl flex-col justify-between overflow-hidden border-none bg-transparent">
       <CardContent>
         <div
           ref={messagesContainerRef}
-          className="scrollbar h-[62vh] overflow-y-auto pr-4"
+          className="scrollbar h-[68vh] overflow-y-auto pr-4"
         >
           <Messages messages={messages} currentUserId={user.id} />
         </div>
       </CardContent>
-      <CardFooter>
-        <div className="flex w-full items-center space-x-2">
-          <InputField
-            id="message"
-            label=""
-            className="w-full"
-            placeholder="Type your message..."
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            sendMessage={sendMessage}
-            onBlur={() => {}}
-          />
-          <Button
-            className="h-12 rounded-full bg-secondary text-white hover:bg-orange"
-            onClick={sendMessage}
-          >
-            <IoIosSend />
-          </Button>
-        </div>
+      <CardFooter className="min-w-4xl flex w-full justify-center">
+        <ChatInput
+          inputMessage={inputMessage}
+          setInputMessage={setInputMessage}
+          sendMessage={sendMessage}
+        />
       </CardFooter>
     </Card>
   );
