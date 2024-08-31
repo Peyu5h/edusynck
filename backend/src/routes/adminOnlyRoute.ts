@@ -8,6 +8,7 @@ import {
   oauth2callback,
   getImage,
   extractTextFromPptxUrl,
+  getYoutubeVideos,
 } from "../controllers/adminOnlyController.js";
 import { googleAuthMiddleware } from "../middlewares/googleAuthMiddleware.js";
 
@@ -26,5 +27,6 @@ router
 router
   .route("/all-courses")
   .get(trimRequest.all, googleAuthMiddleware, allCourses);
+router.post("/youtube", googleAuthMiddleware, getYoutubeVideos);
 
 export default router;

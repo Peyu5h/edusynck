@@ -290,3 +290,31 @@ export const extractTextFromPptxUrl = async (req, res) => {
       .json({ error: "Failed to process PPTX file", message: error.message });
   }
 };
+
+export const getYoutubeVideos = async (req, res) => {
+  const { keywords } = req.body;
+
+  if (!keywords || typeof keywords !== "string") {
+    return res.status(400).json({ error: "Keywords are required" });
+  }
+
+  const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
+        keywords,
+      )}&type=video&maxResults=4&key=${YOUTUBE_API_KEY}`,
+    );
+
+    if (!response.ok) {
+      throw new Error("YouTube API request failed");
+    }
+
+    const data = await response.json();
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error fetching YouTube videos:", error);
+    res.status(500).json({ error: "Failed to fetch YouTube videos" });
+  }
+};

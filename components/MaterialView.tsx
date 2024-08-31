@@ -18,6 +18,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Button } from "./ui/button";
 import MarkdownRenderer from "./MarkdownRender";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import YouTubeVideos from "./YouTubeVideos";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -42,6 +43,8 @@ const MaterialView: React.FC<{
   const [selectedDoc, setSelectedDoc] = useState<IDocument | null>(null);
   const [extractedText, setExtractedText] = useState<string>("");
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [searchString, setSearchString] = useState<string>("");
 
   useEffect(() => {
     if (uri && fileType) {
@@ -188,6 +191,45 @@ const MaterialView: React.FC<{
     extractText();
   }, [selectedDoc]);
 
+  useEffect(() => {
+    if (extractedText) {
+      const extractKeywords = (text: string) => {
+        const words = text.toLowerCase().split(/\W+/);
+        const stopWords = new Set([
+          "the",
+          "a",
+          "an",
+          "in",
+          "on",
+          "at",
+          "for",
+          "to",
+          "of",
+          "and",
+          "or",
+          "but",
+        ]);
+        const wordFreq = words.reduce(
+          (acc, word) => {
+            if (!stopWords.has(word) && word.length > 2) {
+              acc[word] = (acc[word] || 0) + 1;
+            }
+            return acc;
+          },
+          {} as Record<string, number>,
+        );
+
+        const sortedWords = Object.entries(wordFreq).sort(
+          (a, b) => b[1] - a[1],
+        );
+        const topKeywords = sortedWords.slice(0, 4).map(([word]) => word);
+        return [...topKeywords, "MU sem exam"];
+      };
+
+      setKeywords(extractKeywords(extractedText));
+    }
+  }, [extractedText]);
+
   // ai stuff
   const [response, setResponse] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -199,11 +241,18 @@ const MaterialView: React.FC<{
   );
 
   const generatePrompt = useCallback(() => {
-    return `Please provide a concise summary of the following text, highlighting the main points and key information:
-
-${extractedText}
-
-Summary:`;
+    return `Based on the following text, create detailed study notes suitable for university exam preparation, focusing on Mumbai University:
+  
+  ${extractedText}
+  
+  Please include:
+  1. Key topics and concepts, highlighting those frequently asked in previous year questions
+  2. Important definitions and explanations
+  3. Summarized points for easy understanding and quick revision
+  4. Any formulas, theories, or methodologies that are crucial for the exam
+  5. Brief examples or case studies, if applicable
+  
+  Format the notes in a clear, structured manner using Markdown for better readability.`;
   }, [extractedText]);
 
   const generateResponse = useCallback(async () => {
@@ -233,6 +282,42 @@ Summary:`;
       setIsGenerating(false);
     }
   }, [generatePrompt]);
+
+  const generateSearchString = useCallback(async () => {
+    if (!extractedText) {
+      setError("No text to analyze.");
+      return;
+    }
+    setError("");
+    setIsGenerating(true);
+    try {
+      const model = genAI.current.getGenerativeModel({
+        model: "gemini-1.5-flash-latest",
+      });
+      const prompt = `Analyze the following text and generate a concise search string (max 5-6 words) that captures the main topic for searching related YouTube videos:
+
+${extractedText}
+
+Search string:`;
+
+      const result = await model.generateContent(prompt);
+      const generatedSearchString = result.response.text().trim();
+      setSearchString(generatedSearchString);
+    } catch (error) {
+      console.error("Error generating search string:", error);
+      setError(
+        "An error occurred while generating the search string. Please try again later.",
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [extractedText]);
+
+  useEffect(() => {
+    if (extractedText) {
+      generateSearchString();
+    }
+  }, [extractedText, generateSearchString]);
 
   const handleGenerate = () => {
     setResponse("");
@@ -285,8 +370,8 @@ Summary:`;
         >
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="extractedText">Extracted Text</TabsTrigger>
-            <TabsTrigger value="summary">Summary</TabsTrigger>
-            <TabsTrigger value="youtube">Youtube</TabsTrigger>
+            <TabsTrigger value="examNotes">Make Notes</TabsTrigger>
+            <TabsTrigger value="youtube">YouTube</TabsTrigger>
             <TabsTrigger value="quizeMe">Quize Me</TabsTrigger>
           </TabsList>
           <TabsContent
@@ -304,23 +389,29 @@ Summary:`;
               )}
             </div>
           </TabsContent>
-          <TabsContent value="summary" className="flex-grow overflow-hidden">
+          <TabsContent value="examNotes" className="flex-grow overflow-hidden">
             <div className="flex h-full flex-col p-4">
-              <div className="scrollbar mb-4 flex-grow overflow-y-auto rounded bg-gray-800 p-2 text-gray-300">
+              <div className="scrollbar mb-4 flex-grow overflow-y-auto rounded bg-gray-800 p-4 text-foreground">
                 {<MarkdownRenderer content={response} /> ||
                   error ||
-                  "Click 'Summarize Document' to generate a summary."}
+                  "Click 'Generate Exam Notes' to create detailed study notes."}
                 {isGenerating && <span className="animate-pulse">|</span>}
               </div>
               <Button onClick={handleGenerate}>
-                {isGenerating ? "Generating..." : "Summarize Document"}
+                {isGenerating ? "Generating..." : "Generate Exam Notes"}
               </Button>
             </div>
           </TabsContent>
 
           <TabsContent value="youtube" className="flex-grow overflow-hidden">
             <div className="flex h-full flex-col p-4">
-              <div className="scrollbar mb-4 flex-grow overflow-y-auto rounded bg-gray-800 p-2 text-gray-300"></div>
+              <h2 className="mb-4 text-xl font-bold">Related YouTube Videos</h2>
+              <p className="mb-4 text-sm text-gray-600">
+                Search string: {searchString}
+              </p>
+              <div className="scrollbar flex-grow overflow-y-auto">
+                <YouTubeVideos keywords={[searchString]} />
+              </div>
             </div>
           </TabsContent>
           <TabsContent value="quizeMe" className="flex-grow overflow-hidden">

@@ -1,6 +1,6 @@
 import express from "express";
 import trimRequest from "trim-request";
-import { allCourses, auth, getFile, getAllAssignments, oauth2callback, getImage, extractTextFromPptxUrl, } from "../controllers/adminOnlyController.js";
+import { allCourses, auth, getFile, getAllAssignments, oauth2callback, getImage, extractTextFromPptxUrl, getYoutubeVideos, } from "../controllers/adminOnlyController.js";
 import { googleAuthMiddleware } from "../middlewares/googleAuthMiddleware.js";
 const router = express.Router();
 router.route("/oauth2callback").get(trimRequest.all, oauth2callback);
@@ -16,4 +16,5 @@ router
 router
     .route("/all-courses")
     .get(trimRequest.all, googleAuthMiddleware, allCourses);
+router.post("/youtube", googleAuthMiddleware, getYoutubeVideos);
 export default router;
