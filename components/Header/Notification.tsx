@@ -30,15 +30,16 @@ const Notification = () => {
       <DropdownMenuContent>
         <DropdownMenuLabel>Notifications</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <UserIcon className="mr-2 size-4" />
-          Bruh
-        </DropdownMenuItem>
+        <DropdownMenuItem>4+ new messages</DropdownMenuItem>
 
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => console.log("hello")}>
-          <LogOutIcon className="mr-2 size-4" />
-          Bruh
+          Pranali just uploaded assignment
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem onClick={() => console.log("hello")}>
+          Shailey just uploaded material
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

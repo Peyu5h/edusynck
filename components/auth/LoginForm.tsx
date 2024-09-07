@@ -78,8 +78,11 @@ const LoginForm = () => {
           )}
           <div style={{}} className="text-center text-sm">
             Don&apos;t have an account?{" "}
-            <Link className="text-orange-500 hover:underline" href="/sign-up">
-              Sign In
+            <Link
+              className="text-orange-500 text-orange hover:underline"
+              href="/sign-up"
+            >
+              Sign up
             </Link>
           </div>
         </form>

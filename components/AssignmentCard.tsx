@@ -23,12 +23,23 @@ interface AssignmentCardProps {
     type?: string;
     thumbnail?: string;
     alternateLink: string;
+    courseName: string; // Add this line
   };
+}
+
+function formatCourseName(name: string): string {
+  return name
+    .replace(/TE|SE|FE|BR|CMPN|INFT|ECS|EXTC|-|\d+|%20/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .slice(0, 2)
+    .join("-");
 }
 
 const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment }) => {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-
+  console.log(assignment);
   const formatDescription = (
     description: string | undefined | null,
     maxLength = 100,
@@ -80,49 +91,50 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment }) => {
     return null;
   }
   return (
-    <div>
+    <div className="w-full">
       <Link
         href={{
           pathname: `/assignments/${material.id}`,
         }}
-        className="flex w-full cursor-pointer items-center justify-between overflow-hidden rounded-lg border-[1px] border-transparent bg-bground2 duration-150 hover:border-[1px] hover:border-zinc-700"
+        className="flex h-[180px] w-full cursor-pointer items-center justify-between overflow-hidden rounded-lg border-[1px] border-transparent bg-bground2 duration-150 hover:border-[1px] hover:border-zinc-700"
       >
-        <div className="left flex gap-x-4">
-          <div className="thumbnai overflow-hidden p-2">
-            <div className="h-full w-[8rem] rounded-lg bg-white">
+        <div className="left flex h-full gap-x-4">
+          <div className="thumbnail h-full w-[140px] overflow-hidden p-2">
+            <div className="relative h-full w-full rounded-lg bg-white">
               {material?.thumbnailUrl ? (
                 <Image
                   src={`${backendUrl}/api/admin/image?thumbnailUrl=${material.thumbnailUrl}`}
                   alt="thumbnail"
-                  className="h-full rounded-lg"
-                  width={100}
-                  height={99}
-                  layout="responsive"
+                  className="rounded-lg object-cover"
+                  fill
+                  sizes="180px"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center rounded-lg">
-                  <Image
-                    src={`https://res.cloudinary.com/dkysrpdi6/image/upload/v1723574586/image_lpepb4.png`}
-                    alt="thumbnail"
-                    className="rounded-lg"
-                    width="99"
-                    height={99}
-                    layout="responsive"
-                  />
-                </div>
+                <Image
+                  src={`https://res.cloudinary.com/dkysrpdi6/image/upload/v1723574586/image_lpepb4.png`}
+                  alt="thumbnail"
+                  className="rounded-lg object-cover"
+                  fill
+                  sizes="180px"
+                />
               )}
             </div>
           </div>
-          <div className="description flex flex-col py-4">
-            <h1 className="text-2xl font-light text-text">
-              {assignment.title}
-            </h1>
-            <p className="text-md font-normal text-thintext">
-              {formatDescription(assignment.description, 110)}
-            </p>
-
+          <div className="description flex flex-col justify-between py-4 pr-4">
+            <div>
+              <h1 className="line-clamp-1 text-2xl font-light text-text">
+                {assignment.title}
+              </h1>
+              <p className="text-md line-clamp-2 font-normal text-thintext">
+                {formatDescription(assignment.description, 110)}
+              </p>
+            </div>
             <div className="tags mt-2 flex gap-x-2">
-              <Badge className="h-8" variant="green" title="Solved" />
+              <Badge
+                className="h-8"
+                variant="orange"
+                title={formatCourseName(assignment.courseName)}
+              />
               <Badge
                 variant="blue"
                 title={assignment?.type?.toUpperCase() || "PDF"}

@@ -19,6 +19,7 @@ import { Button } from "./ui/button";
 import MarkdownRenderer from "./MarkdownRender";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import YouTubeVideos from "./YouTubeVideos";
+import QuizMe from "./QuizMe";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -326,7 +327,7 @@ Search string:`;
 
   return (
     <div className="flex h-full w-full gap-x-4">
-      <div className="h-full w-1/3">
+      <div className="h-full w-1/3 overflow-x-auto">
         {doc ? (
           doc.length > 0 ? (
             <DocViewer
@@ -372,7 +373,7 @@ Search string:`;
             <TabsTrigger value="extractedText">Extracted Text</TabsTrigger>
             <TabsTrigger value="examNotes">Make Notes</TabsTrigger>
             <TabsTrigger value="youtube">YouTube</TabsTrigger>
-            <TabsTrigger value="quizeMe">Quize Me</TabsTrigger>
+            <TabsTrigger value="quizMe">Quiz Me</TabsTrigger>
           </TabsList>
           <TabsContent
             value="extractedText"
@@ -414,9 +415,11 @@ Search string:`;
               </div>
             </div>
           </TabsContent>
-          <TabsContent value="quizeMe" className="flex-grow overflow-hidden">
+          <TabsContent value="quizMe" className="flex-grow overflow-hidden">
             <div className="flex h-full flex-col p-4">
-              <div className="scrollbar mb-4 flex-grow overflow-y-auto rounded bg-gray-800 p-2 text-gray-300"></div>
+              <div className="scrollbar flex-grow overflow-y-auto">
+                <QuizMe extractedText={extractedText} />
+              </div>
             </div>
           </TabsContent>
         </Tabs>
