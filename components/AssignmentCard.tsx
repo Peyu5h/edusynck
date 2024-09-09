@@ -99,7 +99,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment }) => {
         className="flex h-[180px] w-full cursor-pointer items-center justify-between overflow-hidden rounded-lg border-[1px] border-transparent bg-bground2 duration-150 hover:border-[1px] hover:border-zinc-700"
       >
         <div className="left flex h-full gap-x-4">
-          <div className="thumbnail h-full w-[140px] overflow-hidden p-2">
+          <div className="thumbnail hidden h-full w-[140px] overflow-hidden p-2 sm:block">
             <div className="relative h-full w-full rounded-lg bg-white">
               {material?.thumbnailUrl ? (
                 <Image
@@ -120,13 +120,13 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment }) => {
               )}
             </div>
           </div>
-          <div className="description flex flex-col justify-between py-4 pr-4">
+          <div className="description flex flex-col justify-between py-4 pl-4 pr-4 sm:pl-0">
             <div>
               <h1 className="line-clamp-1 text-2xl font-light text-text">
                 {assignment.title}
               </h1>
               <p className="text-md line-clamp-2 font-normal text-thintext">
-                {formatDescription(assignment.description, 110)}
+                {formatDescription(assignment.description, 90)}
               </p>
             </div>
             <div className="tags mt-2 flex gap-x-2">

@@ -240,8 +240,8 @@ Summary:`;
   };
 
   return (
-    <div className="flex h-full w-full gap-x-4">
-      <div className="h-full w-1/3">
+    <div className="flex h-full w-full flex-col gap-y-4 md:flex-row md:gap-x-4 md:gap-y-0">
+      <div className="h-full overflow-x-auto md:w-1/3">
         {doc ? (
           doc.length > 0 ? (
             <DocViewer
@@ -278,7 +278,7 @@ Summary:`;
           </div>
         )}
       </div>
-      <div className="scrollbar h-full w-2/3">
+      <div className="scrollbar h-full md:w-2/3">
         <Tabs
           defaultValue="extractedText"
           className="flex h-full w-full flex-col"

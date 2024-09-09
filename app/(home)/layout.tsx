@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import OnBoardText from "~/components/auth/OnBoardText";
 import Header from "~/components/Header/Header";
+import MobileHamburger from "~/components/Header/MobileHamburger";
 import SideNav from "~/components/sidebar/SideNav";
 import { useCourses } from "~/hooks/useGetCourses";
 
@@ -19,7 +20,7 @@ export default async function HomeLayout({
 }) {
   return (
     <div className="relative flex h-screen w-full overflow-y-hidden bg-bground1 bg-bgImage bg-cover bg-center bg-no-repeat p-2.5 font-khula text-text">
-      <div className="sticky top-0 h-screen">
+      <div className="sticky top-0 hidden h-screen md:block">
         <SideNav />
       </div>
       <div className="flex w-full flex-col">

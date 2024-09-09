@@ -30,7 +30,6 @@ const Page: React.FC = () => {
     setIsSidebarExpanded(true);
   }, [setIsSidebarExpanded]);
 
-
   const loaders = Array.from({ length: 5 });
 
   return (
@@ -40,7 +39,7 @@ const Page: React.FC = () => {
           Your classrooms
         </h1>
       </div>
-      <div className="grid w-full grid-cols-3 gap-6">
+      <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3 xl:gap-6">
         {isLoading ? (
           loaders.map((_, index) => <SubjectCardLoader key={index} />)
         ) : error ? (

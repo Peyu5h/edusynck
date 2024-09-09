@@ -5,6 +5,7 @@ import UserButton from "./UserButton/UserButton";
 import Notification from "./Notification";
 import { usePathname } from "next/navigation";
 import { useUser } from "~/hooks/useUser";
+import MobileHamburger from "./MobileHamburger";
 
 const Header = () => {
   const path = usePathname();
@@ -38,15 +39,17 @@ const Header = () => {
             <p className="text-thintext">Submit the assignment before TT1</p>
           </div>
         ) : (
-          <div className="font-antic text-4xl">
+          <div className="font-antic text-2xl sm:text-4xl">
             {greeting} <span className="text-pri">{firstName}</span>
           </div>
         )}
-
-        <div className="">
-          <div className="user-btn flex gap-x-8">
+        <div>
+          <div className="user-btn hidden gap-x-8 md:flex">
             <UserButton user={user} />
             <Notification />
+          </div>
+          <div className="mb-12 flex items-center justify-center">
+            <MobileHamburger />
           </div>
         </div>
       </div>

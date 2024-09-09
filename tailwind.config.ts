@@ -20,7 +20,7 @@ const config = {
         sm: "420px",
         md: "768px",
         lg: "1024px",
-        xl: "1280px",
+        xl: "1240px",
         "2xl": "1400px",
       },
     },
