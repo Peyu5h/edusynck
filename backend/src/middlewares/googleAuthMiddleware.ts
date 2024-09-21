@@ -17,16 +17,15 @@ function getOAuth2Client() {
   );
 }
 
-async function refreshAccessToken(oAuth2Client: any): Promise<void> {
+async function refreshAccessToken(oAuth2Client) {
   if (fs.existsSync(TOKEN_PATH)) {
     const tokens = JSON.parse(fs.readFileSync(TOKEN_PATH, "utf-8"));
     oAuth2Client.setCredentials(tokens);
 
     try {
       if (
-        !oAuth2Client.credentials ||
-        !oAuth2Client.credentials.expiry_date ||
-        oAuth2Client.credentials.expiry_date < Date.now()
+        !oAuth2Client.credentials.access_token ||
+        oAuth2Client.isTokenExpiring()
       ) {
         const { credentials: newTokens } =
           await oAuth2Client.refreshAccessToken();
@@ -34,12 +33,12 @@ async function refreshAccessToken(oAuth2Client: any): Promise<void> {
         oAuth2Client.setCredentials(newTokens);
       }
     } catch (error) {
-      console.error("unable to fetch accessToken", error);
+      console.error("Unable to refresh access token:", error);
       fs.unlinkSync(TOKEN_PATH);
       throw new Error("reauthorize");
     }
   } else {
-    throw new Error("Authorize but visiting /auth");
+    throw new Error("Authorize by visiting /auth");
   }
 }
 
