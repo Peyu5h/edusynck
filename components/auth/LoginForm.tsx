@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import InputField from "../InputBox";
 import { useFormik } from "formik";
 import { loginSchema } from "~/lib/validation";
-
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
@@ -14,8 +13,11 @@ import { useLogin } from "~/hooks/useAuth";
 const LoginForm = () => {
   const [showPass, setShowPass] = useState(false);
   const router = useRouter();
+  const [guestLoader, setGuestLoader] = useState(false);
 
   const { mutate: login, error, isPending } = useLogin();
+
+  const guestInfo = { email: "123@gmail.com", password: "12345678" };
 
   const formik = useFormik({
     initialValues: {
@@ -37,6 +39,15 @@ const LoginForm = () => {
     setFieldValue,
     values,
   } = formik;
+
+  const handleGuestLogin = () => {
+    setGuestLoader(true);
+    login(guestInfo, {
+      onSettled: () => {
+        setGuestLoader(false);
+      },
+    });
+  };
 
   return (
     <div>
@@ -76,7 +87,24 @@ const LoginForm = () => {
               Sign in
             </Button>
           )}
-          <div style={{}} className="text-center text-sm">
+
+          {guestLoader ? (
+            <Button className="w-full py-6" disabled>
+              <Loader2 className="mr-2 size-4 animate-spin" />
+              Please wait
+            </Button>
+          ) : (
+            <Button
+              className="w-full py-6"
+              type="button"
+              onClick={handleGuestLogin}
+              disabled={isPending}
+            >
+              Continue as Guest
+            </Button>
+          )}
+
+          <div className="text-center text-sm">
             Don&apos;t have an account?{" "}
             <Link
               className="text-orange-500 text-orange hover:underline"
