@@ -304,13 +304,16 @@ Summary:`;
           </TabsContent>
           <TabsContent value="summary" className="flex-grow overflow-hidden">
             <div className="flex h-full flex-col p-4">
-              <div className="scrollbar mb-4 flex-grow overflow-y-auto rounded bg-gray-800 p-2 text-gray-300">
+              <div className="scrollbar mb-4 flex-grow overflow-y-auto rounded bg-bground3 p-2 text-gray-300">
                 {<MarkdownRenderer content={response} /> ||
                   error ||
                   "Click 'Summarize Document' to generate a summary."}
                 {isGenerating && <span className="animate-pulse">|</span>}
               </div>
-              <Button onClick={handleGenerate}>
+              <Button
+                className="bg-bground3 font-medium text-white hover:bg-zinc-800"
+                onClick={handleGenerate}
+              >
                 {isGenerating ? "Generating..." : "Summarize Document"}
               </Button>
             </div>

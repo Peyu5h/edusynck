@@ -4,9 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useUser } from "./useUser";
 
 const fetchCourses = async (userId: string) => {
-  console.log(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/class/${userId}/courses`,
-  );
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/class/${userId}/courses`,
     { cache: "no-store" },

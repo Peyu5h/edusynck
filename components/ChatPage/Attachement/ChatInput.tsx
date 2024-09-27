@@ -1,23 +1,18 @@
 import React, { useState, useRef } from "react";
 import { IoIosSend, IoIosAdd } from "react-icons/io";
 import { FaRegSmile } from "react-icons/fa";
-import InputField from "~/components/InputBox";
 import { Button } from "~/components/ui/button";
 import AttachmentMenu from "../AttachmentMenu";
 import EmojiPickerApp from "../EmojiPicker.jsx";
 import AttachmentIcon from "../svg/AttachmentIcon";
 
 export interface ChatInputProps {
-  inputMessage: string;
-  setInputMessage: React.Dispatch<React.SetStateAction<string>>;
-  sendMessage: () => void;
+  onSend: (message: string, files?: File[]) => void;
 }
 
-const ChatInput = ({
-  inputMessage,
-  setInputMessage,
-  sendMessage,
-}: ChatInputProps) => {
+const ChatInput: React.FC<ChatInputProps> = ({ onSend }) => {
+  const [inputMessage, setInputMessage] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isAttachmentOpen, setIsAttachmentOpen] = useState(false);
   const [isEmojiOpen, setIsEmojiOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -30,6 +25,25 @@ const ChatInput = ({
     setInputMessage((prevMessage) => prevMessage + emoji);
   };
 
+  const handleSendMessage = () => {
+    if (inputMessage.trim() || selectedFiles.length > 0) {
+      onSend(inputMessage, selectedFiles);
+      setInputMessage("");
+      setSelectedFiles([]);
+      setIsAttachmentOpen(false);
+    }
+  };
+
+  const handleFilesSelected = (files: File[]) => {
+    setSelectedFiles(files);
+    // Automatically send the message if files are selected
+    if (files.length > 0) {
+      onSend("", files);
+      setSelectedFiles([]);
+      setIsAttachmentOpen(false);
+    }
+  };
+
   return (
     <div className="mt-2 flex w-full justify-center space-x-3">
       <div className="relative mx-auto flex w-full max-w-4xl items-center space-x-2">
@@ -37,6 +51,7 @@ const ChatInput = ({
           <AttachmentMenu
             isOpen={isAttachmentOpen}
             setIsOpen={setIsAttachmentOpen}
+            onFilesSelected={handleFilesSelected}
           />
         )}
         <div
@@ -73,13 +88,13 @@ const ChatInput = ({
           onChange={(e) => setInputMessage(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              sendMessage();
+              handleSendMessage();
             }
           }}
         />
         <Button
           className="h-12 rounded-full bg-secondary text-white hover:bg-orange"
-          onClick={sendMessage}
+          onClick={handleSendMessage}
         >
           <IoIosSend />
         </Button>

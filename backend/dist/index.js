@@ -45,26 +45,28 @@ io.on("connection", (socket) => {
     });
     socket.on("send_message", async (data) => {
         try {
+            console.log("Received message data:", JSON.stringify(data, null, 2));
             const chat = await prisma.chat.findFirst({
                 where: { name: `Class ${data.room} Chat` },
             });
             if (!chat) {
                 throw new Error("Chat not found");
             }
-            if (!data.content) {
-                throw new Error("Message content is required");
+            if (!data.content && (!data.files || data.files.length === 0)) {
+                throw new Error("Message content or files are required");
             }
             const newMessage = await prisma.message.create({
                 data: {
-                    content: data.content,
+                    content: data.content || "",
                     sender: { connect: { id: data.sender.id } },
                     chat: { connect: { id: chat.id } },
-                    files: data.files || [],
+                    files: data.files, // This should contain the array of file objects
                 },
                 include: {
                     sender: true,
                 },
             });
+            console.log("Created new message:", JSON.stringify(newMessage, null, 2));
             io.to(data.room).emit("receive_message", newMessage);
         }
         catch (error) {

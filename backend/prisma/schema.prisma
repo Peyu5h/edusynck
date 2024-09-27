@@ -111,24 +111,21 @@ model Chat {
   users           User[]    @relation(fields: [userIds], references: [id])
   userIds         String[]
   messages        Message[]
-  latestMessage   Message?  @relation("LatestMessage", fields: [latestMessageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   latestMessageId String?   @unique
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
 
 model Message {
-  id              String   @id @default(cuid()) @map("_id")
-  content         String
-  sender          User     @relation(fields: [senderId], references: [id])
-  senderId        String
-  chat            Chat     @relation(fields: [chatId], references: [id])
-  chatId          String
-  files           Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  isLatestMessage Chat?    @relation("LatestMessage")
-  poll            Poll?
+  id        String   @id @default(cuid()) @map("_id")
+  content   String
+  sender    User     @relation(fields: [senderId], references: [id])
+  senderId  String
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  chatId    String
+  files     Json? // This will store the array of file objects
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Poll {
@@ -139,7 +136,6 @@ model Poll {
   votedPolls VotedPoll[]
   createdBy  User        @relation(fields: [userId], references: [id])
   userId     String
-  message    Message?    @relation(fields: [messageId], references: [id])
   messageId  String?     @unique
   createdAt  DateTime    @default(now())
 }

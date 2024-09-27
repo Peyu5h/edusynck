@@ -22,7 +22,7 @@ router
 router.route("/convert2PDF").get(trimRequest.all, extractTextFromPptxUrl);
 router.route("/image").get(trimRequest.all, googleAuthMiddleware, getImage);
 router
-  .route("/:id/assignments")
+  .route("/class/:classId/assignments")
   .get(trimRequest.all, googleAuthMiddleware, getAllAssignments);
 router
   .route("/all-courses")

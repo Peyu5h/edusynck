@@ -20,7 +20,7 @@ export default function AssignmentPage() {
 
   return (
     <div>
-      <div className="flex h-[80vh] w-full cursor-pointer justify-between rounded-lg bg-bground2 p-4">
+      <div className="flex h-[75vh] w-full cursor-pointer justify-between rounded-lg bg-bground2 p-4">
         <div className="deadline w-full">
           <DocView uri={fileUrl} fileType={fileType} />
         </div>

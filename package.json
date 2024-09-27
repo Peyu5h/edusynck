@@ -34,8 +34,9 @@
     "clsx": "^2.1.1",
     "cobe": "^0.6.3",
     "emoji-picker-react": "^4.11.1",
+    "file-saver": "^2.0.5",
     "formik": "^2.4.6",
-    "framer-motion": "^11.3.30",
+    "framer-motion": "^11.9.0",
     "jotai": "^2.9.2",
     "lucide-react": "^0.419.0",
     "mammoth": "^1.8.0",
@@ -56,6 +57,7 @@
     "react-spinners": "^0.14.1",
     "react-spring": "^9.7.4",
     "react-syntax-highlighter": "^15.5.0",
+    "react-use-downloader": "^1.2.8",
     "socket.io-client": "^4.7.5",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
@@ -64,6 +66,7 @@
     "yup": "^1.4.0"
   },
   "devDependencies": {
+    "@types/file-saver": "^2.0.7",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

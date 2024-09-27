@@ -13,8 +13,8 @@ import axios from "axios";
 import { AxiosResponse } from "axios";
 import ChatInput from "~/components/ChatPage/Attachement/ChatInput";
 import Messages from "~/components/ChatPage/Messages";
-import MaterialLoader from "~/components/Loaders/MaterialLoader";
 import SubjectCardLoader from "~/components/Loaders/SubjectCardLoader";
+import ChatScreenLoader from "~/components/Loaders/ChatScreenLoader";
 
 interface Message {
   id: string;
@@ -25,11 +25,11 @@ interface Message {
 }
 
 export default function ChatsPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState("");
+  const [messages, setMessages] = useState<any[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
+  const [isLoading, setIsLoading] = useState(true); // Add this line
 
   useEffect(() => {
     const newSocket = io(`${process.env.NEXT_PUBLIC_BACKEND_URL}`);
@@ -46,9 +46,11 @@ export default function ChatsPage() {
           )
           .then((response: AxiosResponse<Message[]>) => {
             setMessages(response.data);
+            setIsLoading(false); // Add this line
           })
           .catch((error) => {
             console.error("Failed to fetch old messages:", error);
+            setIsLoading(false); // Add this line
           });
       }
     });
@@ -70,24 +72,52 @@ export default function ChatsPage() {
     }
   }, [messages]);
 
-  const sendMessage = () => {
+  const sendMessage = async (message: string, files?: File[]) => {
     if (
-      inputMessage.trim() &&
+      (message.trim() || (files && files.length > 0)) &&
       socket &&
       user?.classId &&
       user?.id &&
       user?.name
     ) {
-      const messageData = {
+      const messageData: any = {
         room: user.classId,
-        content: inputMessage,
+        content: message,
         sender: { id: user.id, name: user.name },
         files: [],
-        createdAt: new Date().toISOString(), // Add this line
+        createdAt: new Date().toISOString(),
       };
-      console.log("Sending message:", messageData);
+
+      if (files && files.length > 0) {
+        const uploadedFiles = await Promise.all(
+          files.map(async (file) => {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append(
+              "upload_preset",
+              process.env.NEXT_PUBLIC_CLOUDINARY_SECRET || "",
+            );
+
+            const response = await axios.post(
+              "https://api.cloudinary.com/v1_1/dkysrpdi6/auto/upload",
+              formData,
+            );
+
+            return {
+              url: response.data.secure_url,
+              type: file.type,
+              name: file.name,
+            };
+          }),
+        );
+
+        messageData.files = uploadedFiles;
+      }
+
+      console.log("Sending message:", JSON.stringify(messageData, null, 2));
       socket.emit("send_message", messageData);
-      setInputMessage("");
+      // Remove this line to prevent duplication
+      // setMessages((prevMessages) => [...prevMessages, messageData]);
     }
   };
 
@@ -101,8 +131,12 @@ export default function ChatsPage() {
     );
   }
 
+  if (isLoading) {
+    return <ChatScreenLoader />;
+  }
+
   return (
-    <Card className="mx-auto flex h-[83vh] w-full max-w-6xl flex-col justify-between overflow-hidden border-none bg-transparent">
+    <Card className="mx-auto mt-[-60px] flex h-[84vh] w-full max-w-6xl flex-col justify-between overflow-hidden border-none bg-transparent">
       <CardContent>
         <div
           ref={messagesContainerRef}
@@ -112,11 +146,7 @@ export default function ChatsPage() {
         </div>
       </CardContent>
       <CardFooter className="min-w-4xl flex w-full justify-center">
-        <ChatInput
-          inputMessage={inputMessage}
-          setInputMessage={setInputMessage}
-          sendMessage={sendMessage}
-        />
+        <ChatInput onSend={sendMessage} />
       </CardFooter>
     </Card>
   );

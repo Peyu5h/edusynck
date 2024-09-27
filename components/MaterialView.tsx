@@ -326,8 +326,8 @@ Search string:`;
   };
 
   return (
-    <div className="flex h-full w-full flex-col gap-y-4 md:flex-row md:gap-x-4 md:gap-y-0">
-      <div className="h-full overflow-x-auto md:w-1/3">
+    <div className="flex h-[76vh] w-full flex-col gap-y-4 overflow-y-hidden md:flex-row md:gap-x-4 md:gap-y-0">
+      <div className="scrollbar h-full overflow-x-auto md:w-1/3">
         {doc ? (
           doc.length > 0 ? (
             <DocViewer
@@ -364,48 +364,66 @@ Search string:`;
           </div>
         )}
       </div>
-      <div className="scrollbar h-full md:w-2/3">
+      <div className="h-full md:w-2/3">
         <Tabs
           defaultValue="extractedText"
-          className="flex h-full w-full flex-col"
+          className="flex h-full w-full flex-col p-4 pt-0"
         >
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="extractedText">Extracted Text</TabsTrigger>
-            <TabsTrigger value="examNotes">Make Notes</TabsTrigger>
-            <TabsTrigger value="youtube">YouTube</TabsTrigger>
-            <TabsTrigger value="quizMe">Quiz Me</TabsTrigger>
+            <TabsTrigger value="examNotes" disabled={!extractedText}>
+              Make Notes
+            </TabsTrigger>
+            <TabsTrigger value="youtube" disabled={!extractedText}>
+              YouTube
+            </TabsTrigger>
+            <TabsTrigger value="quizMe" disabled={!extractedText}>
+              Quiz Me
+            </TabsTrigger>
           </TabsList>
           <TabsContent
             value="extractedText"
-            className="scrollbar flex-grow overflow-hidden"
+            className="flex-grow overflow-hidden"
           >
-            <div className="flex h-full flex-col overflow-hidden p-4">
+            <div className="flex h-full flex-col overflow-hidden">
               <h2 className="mb-2 text-xl font-bold">Extracted Text</h2>
               {isExtracting ? (
-                <Loader2 size="2rem" className="animate-spin" />
+                <div className="scrollbar flex h-full items-center justify-center">
+                  <Loader2 size="2rem" className="animate-spin" />
+                </div>
               ) : (
                 <div className="scrollbar flex-grow overflow-y-auto whitespace-pre-wrap">
-                  {extractedText}
+                  {extractedText || "No text extracted yet."}
                 </div>
               )}
             </div>
           </TabsContent>
-          <TabsContent value="examNotes" className="flex-grow overflow-hidden">
-            <div className="flex h-full flex-col p-4">
-              <div className="scrollbar mb-4 flex-grow overflow-y-auto rounded bg-gray-800 p-4 text-foreground">
+          <TabsContent
+            value="examNotes"
+            className="scrollbar flex-grow overflow-hidden"
+          >
+            <div className="scrollbar flex h-full flex-col">
+              <div className="scrollbar mb-4 flex-grow overflow-y-auto rounded bg-bground3 text-foreground">
                 {<MarkdownRenderer content={response} /> ||
                   error ||
                   "Click 'Generate Exam Notes' to create detailed study notes."}
                 {isGenerating && <span className="animate-pulse">|</span>}
               </div>
-              <Button onClick={handleGenerate}>
+
+              <Button
+                className="bg-bground3 font-medium text-white hover:bg-zinc-800"
+                onClick={handleGenerate}
+              >
                 {isGenerating ? "Generating..." : "Generate Exam Notes"}
               </Button>
             </div>
           </TabsContent>
 
-          <TabsContent value="youtube" className="flex-grow overflow-hidden">
-            <div className="flex h-full flex-col p-4">
+          <TabsContent
+            value="youtube"
+            className="scrollbar flex-grow overflow-hidden"
+          >
+            <div className="scrollbar flex h-full flex-col">
               <h2 className="mb-4 text-xl font-bold">Related YouTube Videos</h2>
               <p className="mb-4 text-sm text-gray-600">
                 Search string: {searchString}
@@ -415,8 +433,11 @@ Search string:`;
               </div>
             </div>
           </TabsContent>
-          <TabsContent value="quizMe" className="flex-grow overflow-hidden">
-            <div className="flex h-full flex-col p-4">
+          <TabsContent
+            value="quizMe"
+            className="scrollbar flex-grow overflow-hidden"
+          >
+            <div className="scrollbar flex h-full flex-col">
               <div className="scrollbar flex-grow overflow-y-auto">
                 <QuizMe extractedText={extractedText} />
               </div>

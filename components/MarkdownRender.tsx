@@ -59,13 +59,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
           style={tomorrow}
           language={match[1]}
           PreTag="div"
-          className="mb-4 rounded-md"
+          className="mb-4 rounded-md bg-bground2"
           {...props}
         >
           {String(children).replace(/\n$/, "")}
         </SyntaxHighlighter>
       ) : (
-        <code className="rounded-md bg-gray-100 px-1 py-0.5" {...props}>
+        <code className="rounded-md bg-bground2 px-1.5 py-1" {...props}>
           {children}
         </code>
       );

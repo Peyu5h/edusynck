@@ -116,20 +116,16 @@ export const getFile = async (req, res) => {
 export const getAllAssignments = async (req, res) => {
   const { classId } = req.params;
   const oAuth2Client = req["googleAuth"];
-
   try {
     // Fetch all courses for the given classId
     const courses = await prisma.course.findMany({
       where: { classId },
       select: { googleClassroomId: true, name: true },
     });
-
     if (!courses || courses.length === 0) {
       return res.status(404).json({ error: "No courses found for this class" });
     }
-
     const classroom = google.classroom({ version: "v1", auth: oAuth2Client });
-
     // Function to fetch assignments for a single course
     const fetchCourseAssignments = async (course) => {
       const { data: { courseWork = [] } = {} } =
@@ -139,11 +135,9 @@ export const getAllAssignments = async (req, res) => {
           fields:
             "courseWork(id,title,description,dueDate,dueTime,materials,alternateLink)",
         });
-
       return courseWork.map((ga) => {
         const dueDate = parseDueDate(ga.dueDate, ga.dueTime);
         const formattedDueDate = formatDueDate(dueDate);
-
         return {
           googleId: ga.id,
           title: ga.title,
@@ -167,15 +161,12 @@ export const getAllAssignments = async (req, res) => {
         };
       });
     };
-
     // Fetch assignments for all courses concurrently
     const allAssignments = await Promise.all(
       courses.map((course) => fetchCourseAssignments(course)),
     );
-
     // Flatten the array of assignments
     const flattenedAssignments = allAssignments.flat();
-
     res.json(flattenedAssignments);
   } catch (error) {
     console.error("Error fetching all assignments:", error);

@@ -13,22 +13,21 @@ async function refreshAccessToken(oAuth2Client) {
         const tokens = JSON.parse(fs.readFileSync(TOKEN_PATH, "utf-8"));
         oAuth2Client.setCredentials(tokens);
         try {
-            if (!oAuth2Client.credentials ||
-                !oAuth2Client.credentials.expiry_date ||
-                oAuth2Client.credentials.expiry_date < Date.now()) {
+            if (!oAuth2Client.credentials.access_token ||
+                oAuth2Client.isTokenExpiring()) {
                 const { credentials: newTokens } = await oAuth2Client.refreshAccessToken();
                 fs.writeFileSync(TOKEN_PATH, JSON.stringify(newTokens));
                 oAuth2Client.setCredentials(newTokens);
             }
         }
         catch (error) {
-            console.error("unable to fetch accessToken", error);
+            console.error("Unable to refresh access token:", error);
             fs.unlinkSync(TOKEN_PATH);
             throw new Error("reauthorize");
         }
     }
     else {
-        throw new Error("Authorize but visiting /auth");
+        throw new Error("Authorize by visiting /auth");
     }
 }
 export const googleAuthMiddleware = async (req, res, next) => {
