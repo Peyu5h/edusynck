@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Checkbox } from "./ui/checkbox";
 import { Loader2 } from "lucide-react";
+import Confetti from "react-confetti";
 
 interface Question {
   question: string;
@@ -16,6 +17,9 @@ const QuizMe: React.FC<{ extractedText: string }> = ({ extractedText }) => {
   const [score, setScore] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAnswers, setShowAnswers] = useState(false);
+  const [allCorrect, setAllCorrect] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const genAI = new GoogleGenerativeAI(
     process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY as string,
@@ -80,6 +84,11 @@ const QuizMe: React.FC<{ extractedText: string }> = ({ extractedText }) => {
     const newAnswers = [...userAnswers];
     newAnswers[questionIndex] = optionIndex;
     setUserAnswers(newAnswers);
+    if (showAnswers) {
+      setShowAnswers(false);
+      setScore(null);
+      setAllCorrect(false);
+    }
   };
 
   const calculateScore = () => {
@@ -90,21 +99,42 @@ const QuizMe: React.FC<{ extractedText: string }> = ({ extractedText }) => {
       }
     });
     setScore(correctAnswers);
+    setShowAnswers(true);
+    setAllCorrect(correctAnswers === questions.length);
+
+    // Scroll to results
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  };
+
+  const getOptionClassName = (qIndex: number, oIndex: number) => {
+    if (!showAnswers) return "bg-transparent";
+    if (oIndex === questions[qIndex].correctAnswer) {
+      return "bg-green";
+    }
+    if (
+      userAnswers[qIndex] === oIndex &&
+      oIndex !== questions[qIndex].correctAnswer
+    ) {
+      return "bg-red";
+    }
+    return "bg-transparent";
   };
 
   return (
     <div className="scrollbar mr-2 space-y-6 rounded-lg bg-bground3 p-4 text-gray-200">
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center space-y-4 py-12">
+        <div className="flex h-full min-h-[400px] flex-col items-center justify-center space-y-4 py-12">
           <Loader2 className="text-orange-400 h-12 w-12 animate-spin" />
-          <p className="h-full text-lg font-medium">Generating quiz...</p>
+          <p className="text-lg font-medium">Generating quiz...</p>
         </div>
       ) : error ? (
-        <div className="bg-red-900 text-red-200 rounded-lg p-4">
+        <div className="rounded-lg bg-redBg p-4 text-red">
           <p>{error}</p>
           <Button
             onClick={generateQuiz}
-            className="bg-orange-500 hover:bg-orange-600 mt-4"
+            className="mt-4 bg-orange hover:bg-orange/80"
           >
             Try Again
           </Button>
@@ -118,7 +148,7 @@ const QuizMe: React.FC<{ extractedText: string }> = ({ extractedText }) => {
                 {question.options.map((option, oIndex) => (
                   <label
                     key={oIndex}
-                    className="flex cursor-pointer items-center space-x-3"
+                    className={`flex cursor-pointer items-center space-x-3 rounded-md p-2 transition-colors ${getOptionClassName(qIndex, oIndex)}`}
                   >
                     <Checkbox
                       checked={userAnswers[qIndex] === oIndex}
@@ -136,14 +166,18 @@ const QuizMe: React.FC<{ extractedText: string }> = ({ extractedText }) => {
               className="bg-orange font-medium text-white hover:bg-orange"
               onClick={calculateScore}
             >
-              Submit Answers
+              {showAnswers ? "Recalculate Score" : "Submit Answers"}
             </Button>
 
             <Button
               className="bg-bground2 font-medium text-white hover:bg-zinc-900"
-              onClick={generateQuiz}
+              onClick={() => {
+                setShowAnswers(false);
+                setUserAnswers([]);
+                generateQuiz();
+              }}
             >
-              Generate again
+              Generate New Quiz
             </Button>
           </div>
         </div>
@@ -153,12 +187,13 @@ const QuizMe: React.FC<{ extractedText: string }> = ({ extractedText }) => {
         </div>
       )}
       {score !== null && (
-        <div className="mt-6 rounded-lg bg-gray-700 p-4">
-          <p className="text-orange-400 text-lg font-bold">
+        <div ref={resultsRef} className="mt-6 rounded-lg bg-bground2 p-4">
+          <p className="text-lg font-bold">
             Your Score: {score} / {questions.length}
           </p>
         </div>
       )}
+      {allCorrect && <Confetti />}
     </div>
   );
 };

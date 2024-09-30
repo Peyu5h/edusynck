@@ -10,3 +10,8 @@ export interface User {
   votedPolls?: any[];
   createdPolls?: any[];
 }
+
+export interface Message {
+  role: "user" | "assistant";
+  content: string;
+}

@@ -18,7 +18,7 @@ const Page = () => {
   }, [setIsSidebarExpanded]);
 
   return (
-    <div className="scrollbar h-[75vh] w-full p-4">
+    <div className="scrollbar h-[75vh] w-full p-0 sm:p-4">
       <MaterialView uri={fileUrl} fileType={fileType} />
     </div>
   );

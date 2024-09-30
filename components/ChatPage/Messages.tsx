@@ -164,7 +164,7 @@ const Messages: React.FC<MessagesProps> = ({ messages, currentUserId }) => {
                 </div>
               </p>
               {message.files && message.files.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mb-4 mt-2 flex flex-wrap gap-2">
                   {message.files.map((file, index) => (
                     <div key={index} className="flex flex-col items-center">
                       {file.type.startsWith("image") ? (
@@ -176,9 +176,10 @@ const Messages: React.FC<MessagesProps> = ({ messages, currentUserId }) => {
                           <Image
                             src={file.url}
                             alt={file.name}
-                            width={500}
-                            height={300}
+                            width={100}
+                            height={100}
                             layout="responsive"
+                            className="h-20 max-w-[300px] rounded-lg"
                           />
                         </a>
                       ) : (

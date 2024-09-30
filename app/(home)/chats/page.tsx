@@ -21,7 +21,7 @@ interface Message {
   sender: { id: string; name: string };
   content: string;
   files?: any[];
-  createdAt: string; // Changed from Date to string
+  createdAt: string;
 }
 
 export default function ChatsPage() {
@@ -29,7 +29,7 @@ export default function ChatsPage() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
-  const [isLoading, setIsLoading] = useState(true); // Add this line
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const newSocket = io(`${process.env.NEXT_PUBLIC_BACKEND_URL}`);
@@ -46,11 +46,11 @@ export default function ChatsPage() {
           )
           .then((response: AxiosResponse<Message[]>) => {
             setMessages(response.data);
-            setIsLoading(false); // Add this line
+            setIsLoading(false);
           })
           .catch((error) => {
             console.error("Failed to fetch old messages:", error);
-            setIsLoading(false); // Add this line
+            setIsLoading(false);
           });
       }
     });
@@ -116,8 +116,6 @@ export default function ChatsPage() {
 
       console.log("Sending message:", JSON.stringify(messageData, null, 2));
       socket.emit("send_message", messageData);
-      // Remove this line to prevent duplication
-      // setMessages((prevMessages) => [...prevMessages, messageData]);
     }
   };
 

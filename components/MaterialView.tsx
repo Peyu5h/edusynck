@@ -6,9 +6,10 @@ import DocViewer, {
   IDocument,
 } from "@cyntler/react-doc-viewer";
 import "@cyntler/react-doc-viewer/dist/index.css";
-import { Loader2 } from "lucide-react";
+import { ArrowUpRight, Check, Copy, Loader2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import * as mammoth from "mammoth";
+import Textarea from "react-textarea-autosize";
 
 import pdfToText from "react-pdftotext";
 import Tesseract from "tesseract.js";
@@ -20,6 +21,13 @@ import MarkdownRenderer from "./MarkdownRender";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import YouTubeVideos from "./YouTubeVideos";
 import QuizMe from "./QuizMe";
+import { ny } from "~/lib/utils";
+import { HiSparkles } from "react-icons/hi2";
+import { BsStars } from "react-icons/bs";
+import { FaUser } from "react-icons/fa";
+import { Message } from "~/lib/types";
+import EmptyScreen, { ChatItem } from "./ChatScreen";
+import { useToast } from "./ui/use-toast";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -46,6 +54,42 @@ const MaterialView: React.FC<{
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [searchString, setSearchString] = useState<string>("");
+  const [chatMessages, setChatMessages] = useState<Message[]>([]);
+  const [chatPrompt, setChatPrompt] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showDocument, setShowDocument] = useState(true);
+
+  const extractText = useCallback(async (url: string, type: string) => {
+    setIsExtracting(true);
+    try {
+      let text = "";
+      switch (type.toLowerCase()) {
+        case "pdf":
+          text = await extractTextFromPDF(url);
+          break;
+        case "docx":
+          text = await extractTextFromDOCX(url);
+          break;
+        case "pptx":
+        case "ppt":
+          text = await extractTextFromPptx(url);
+          break;
+        case "jpeg":
+        case "jpg":
+        case "png":
+          text = await extractTextFromImage(url);
+          break;
+        default:
+          text = "Unsupported file type";
+      }
+      setExtractedText(text);
+    } catch (error) {
+      console.error("Error extracting text:", error);
+      setExtractedText("Failed to extract text from the document.");
+    }
+    setIsExtracting(false);
+  }, []);
 
   useEffect(() => {
     if (uri && fileType) {
@@ -58,8 +102,11 @@ const MaterialView: React.FC<{
       ];
       setDoc(newDoc);
       setSelectedDoc(newDoc[0]);
+
+      // Start text extraction immediately
+      extractText(uri, fileType);
     }
-  }, [uri, fileType]);
+  }, [uri, fileType, extractText]);
 
   console.log(fileType);
 
@@ -154,45 +201,6 @@ const MaterialView: React.FC<{
   };
 
   useEffect(() => {
-    const extractText = async () => {
-      if (!selectedDoc || !selectedDoc.fileType) {
-        return;
-      }
-
-      setIsExtracting(true);
-      try {
-        let text = "";
-        switch (selectedDoc.fileType.toLowerCase()) {
-          case "pdf":
-            text = await extractTextFromPDF(selectedDoc.uri);
-            break;
-          case "docx":
-            text = await extractTextFromDOCX(selectedDoc.uri);
-            break;
-          case "pptx":
-          case "ppt":
-            text = await extractTextFromPptx(selectedDoc.uri);
-            break;
-          case "jpeg":
-          case "jpg":
-          case "png":
-            text = await extractTextFromImage(selectedDoc.uri);
-            break;
-          default:
-            text = "Unsupported file type";
-        }
-        setExtractedText(text);
-      } catch (error) {
-        console.error("Error extracting text:", error);
-        setExtractedText("Failed to extract text from the document.");
-      }
-      setIsExtracting(false);
-    };
-
-    extractText();
-  }, [selectedDoc]);
-
-  useEffect(() => {
     if (extractedText) {
       const extractKeywords = (text: string) => {
         const words = text.toLowerCase().split(/\W+/);
@@ -231,9 +239,10 @@ const MaterialView: React.FC<{
     }
   }, [extractedText]);
 
+  const { toast } = useToast();
+
   // ai stuff
   const [response, setResponse] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
   const [uploadedFile, setUploadedFile] = useState(null);
   const fileInputRef = useRef(null);
@@ -325,9 +334,96 @@ Search string:`;
     generateResponse();
   };
 
+  const generateChatResponse = useCallback(async () => {
+    if (!chatPrompt.trim()) return;
+
+    setIsGenerating(true);
+    const newMessage: Message = { role: "user", content: chatPrompt };
+    setChatMessages((prev) => [...prev, newMessage]);
+    setChatPrompt("");
+
+    try {
+      const model = genAI.current.getGenerativeModel({
+        model: "gemini-1.5-flash-latest",
+      });
+
+      const chat = model.startChat({
+        generationConfig: {
+          maxOutputTokens: 1000,
+        },
+      });
+
+      const result = await chat.sendMessageStream(
+        `Based on the following extracted text, please answer the user's question: "${chatPrompt}"\n\nExtracted text:\n${extractedText}`,
+      );
+
+      let fullResponse = "";
+      const responseMessageId = Date.now();
+
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "", id: responseMessageId },
+      ]);
+
+      for await (const chunk of result.stream) {
+        fullResponse += chunk.text();
+        setChatMessages((prev) =>
+          prev.map((msg) =>
+            "id" in msg && msg.id === responseMessageId
+              ? { ...msg, content: fullResponse }
+              : msg,
+          ),
+        );
+      }
+    } catch (error) {
+      console.error("Error generating chat response:", error);
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "An error occurred. Please try again.",
+          id: Date.now(),
+        },
+      ]);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [chatPrompt, extractedText]);
+
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop =
+        scrollContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
+
+  const examNotesRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (examNotesRef.current) {
+      examNotesRef.current.scrollTop = examNotesRef.current.scrollHeight;
+    }
+  }, [response]);
+
+  const [copyNotes, setCopyNotes] = useState(false);
+
+  const copyToClipboard = () => {
+    navigator.clipboard
+      .writeText(response)
+      .then(() => {
+        setCopyNotes(true);
+        setTimeout(() => setCopyNotes(false), 3000);
+      })
+      .catch((err) => {
+        console.error("Failed to copy: ", err);
+      });
+  };
+
   return (
     <div className="flex h-[76vh] w-full flex-col gap-y-4 overflow-y-hidden md:flex-row md:gap-x-4 md:gap-y-0">
-      <div className="scrollbar h-full overflow-x-auto md:w-1/3">
+      <div
+        className={`scrollbar h-full overflow-x-auto md:w-1/3 ${showDocument ? "block" : "hidden sm:block"}`}
+      >
         {doc ? (
           doc.length > 0 ? (
             <DocViewer
@@ -342,8 +438,8 @@ Search string:`;
                 },
                 loadingRenderer: {
                   overrideComponent: () => (
-                    <div className="flex h-full animate-pulse items-center justify-center bg-gray-100">
-                      <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+                    <div className="flex h-full w-full animate-pulse items-center justify-center bg-gray-100">
+                      <Loader2 className="h-8 w-8 animate-spin text-gray-700" />
                     </div>
                   ),
                 },
@@ -364,13 +460,15 @@ Search string:`;
           </div>
         )}
       </div>
-      <div className="h-full md:w-2/3">
+      <div
+        className={`h-full md:w-2/3 ${showDocument ? "hidden sm:block" : "block"}`}
+      >
         <Tabs
-          defaultValue="extractedText"
+          defaultValue="chat"
           className="flex h-full w-full flex-col p-4 pt-0"
         >
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="extractedText">Extracted Text</TabsTrigger>
+            <TabsTrigger value="chat">Chat</TabsTrigger>
             <TabsTrigger value="examNotes" disabled={!extractedText}>
               Make Notes
             </TabsTrigger>
@@ -381,40 +479,100 @@ Search string:`;
               Quiz Me
             </TabsTrigger>
           </TabsList>
-          <TabsContent
-            value="extractedText"
-            className="flex-grow overflow-hidden"
-          >
+          <TabsContent value="chat" className="flex-grow overflow-hidden">
             <div className="flex h-full flex-col overflow-hidden">
-              <h2 className="mb-2 text-xl font-bold">Extracted Text</h2>
-              {isExtracting ? (
-                <div className="scrollbar flex h-full items-center justify-center">
-                  <Loader2 size="2rem" className="animate-spin" />
-                </div>
-              ) : (
-                <div className="scrollbar flex-grow overflow-y-auto whitespace-pre-wrap">
-                  {extractedText || "No text extracted yet."}
-                </div>
-              )}
+              <div
+                ref={scrollContainerRef}
+                className="scrollbar flex-grow overflow-y-auto"
+              >
+                {chatMessages.length === 0 ? (
+                  <EmptyScreen
+                    setChatPrompt={setChatPrompt}
+                    isExtracting={isExtracting}
+                  />
+                ) : (
+                  chatMessages.map((message, index) => (
+                    <ChatItem key={index} message={message} />
+                  ))
+                )}
+              </div>
+              <div className="mt-4">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    generateChatResponse();
+                  }}
+                >
+                  <div className="scrollbar relative flex max-h-60 w-full grow flex-col overflow-hidden rounded-md border">
+                    <Textarea
+                      placeholder={
+                        isExtracting
+                          ? ""
+                          : "Ask a question about the document..."
+                      }
+                      className="scrollbar min-h-[50px] w-full resize-none bg-background px-6 py-5 text-[12px] focus-within:outline-none"
+                      value={chatPrompt}
+                      onChange={(e) => setChatPrompt(e.target.value)}
+                      disabled={isExtracting}
+                    />
+                    <Button
+                      style={{ zIndex: 100 }}
+                      type="submit"
+                      className="absolute bottom-2 right-2 cursor-pointer rounded-md bg-bground3 text-white hover:bg-zinc-800 disabled:cursor-not-allowed"
+                      disabled={
+                        isGenerating || !chatPrompt.trim() || isExtracting
+                      }
+                    >
+                      <ArrowUpRight className="text-white" size={16} />
+                    </Button>
+                  </div>
+                </form>
+              </div>
             </div>
           </TabsContent>
+
           <TabsContent
             value="examNotes"
             className="scrollbar flex-grow overflow-hidden"
           >
             <div className="scrollbar flex h-full flex-col">
-              <div className="scrollbar mb-4 flex-grow overflow-y-auto rounded bg-bground3 text-foreground">
-                {<MarkdownRenderer content={response} /> ||
-                  error ||
-                  "Click 'Generate Exam Notes' to create detailed study notes."}
-                {isGenerating && <span className="animate-pulse">|</span>}
+              <div className="relative flex-grow">
+                <div
+                  ref={examNotesRef}
+                  className="scrollbar mb-4 h-[calc(100vh-300px)] flex-grow overflow-y-auto rounded bg-bground3 p-4 text-foreground"
+                >
+                  {response ? (
+                    <MarkdownRenderer content={response} />
+                  ) : (
+                    <div className="mx-16 flex h-full items-center justify-center text-center text-lg text-thintext">
+                      <p>
+                        Click &quot;Generate Notes&quot; to create detailed
+                        study notes based on the document content.
+                      </p>
+                    </div>
+                  )}
+                  {error && <p className="text-red-500">{error}</p>}
+                </div>
+                {response && (
+                  <Button
+                    className="absolute right-2 top-2 bg-bground2 p-2 px-3 text-white hover:bg-zinc-700"
+                    onClick={copyToClipboard}
+                    title="Copy to clipboard"
+                  >
+                    {copyNotes ? (
+                      <Check className="text-white" size={16} />
+                    ) : (
+                      <Copy className="text-white" size={16} />
+                    )}
+                  </Button>
+                )}
               </div>
-
               <Button
-                className="bg-bground3 font-medium text-white hover:bg-zinc-800"
+                className="mt-0 bg-bground3 font-medium text-white hover:bg-zinc-800"
                 onClick={handleGenerate}
+                disabled={isGenerating || !extractedText}
               >
-                {isGenerating ? "Generating..." : "Generate Exam Notes"}
+                {isGenerating ? "Generating..." : "Generate Notes"}
               </Button>
             </div>
           </TabsContent>
@@ -444,6 +602,14 @@ Search string:`;
             </div>
           </TabsContent>
         </Tabs>
+      </div>
+      <div className="fixed bottom-4 right-4 sm:hidden">
+        <Button
+          onClick={() => setShowDocument(!showDocument)}
+          className="bg-bground3 text-white hover:bg-zinc-800"
+        >
+          {showDocument ? "Show Tabs" : "Show Document"}
+        </Button>
       </div>
     </div>
   );

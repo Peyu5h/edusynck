@@ -6,8 +6,7 @@ import DocViewer, {
   IDocument,
 } from "@cyntler/react-doc-viewer";
 import "@cyntler/react-doc-viewer/dist/index.css";
-import { Loader2 } from "lucide-react";
-import * as XLSX from "xlsx";
+import { ArrowUpRight, Loader2 } from "lucide-react";
 import * as mammoth from "mammoth";
 
 import pdfToText from "react-pdftotext";
@@ -18,6 +17,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Button } from "./ui/button";
 import MarkdownRenderer from "./MarkdownRender";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import Textarea from "react-textarea-autosize";
+import { Message } from "~/lib/types";
+import EmptyScreen, { ChatItem } from "./ChatScreen";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -42,6 +44,12 @@ const DocView: React.FC<{
   const [selectedDoc, setSelectedDoc] = useState<IDocument | null>(null);
   const [extractedText, setExtractedText] = useState<string>("");
   const [isExtracting, setIsExtracting] = useState<boolean>(false);
+  const [chatMessages, setChatMessages] = useState<Message[]>([]);
+  const [chatPrompt, setChatPrompt] = useState("");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const genAI = useRef(
+    new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY as string),
+  );
 
   useEffect(() => {
     if (uri && fileType) {
@@ -194,9 +202,6 @@ const DocView: React.FC<{
   const [error, setError] = useState("");
   const [uploadedFile, setUploadedFile] = useState(null);
   const fileInputRef = useRef(null);
-  const genAI = useRef(
-    new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY as string),
-  );
 
   const generatePrompt = useCallback(() => {
     return `Please provide a concise summary of the following text, highlighting the main points and key information:
@@ -239,6 +244,69 @@ Summary:`;
     generateResponse();
   };
 
+  const generateChatResponse = useCallback(async () => {
+    if (!chatPrompt.trim()) return;
+
+    setIsGenerating(true);
+    const newMessage: Message = { role: "user", content: chatPrompt };
+    setChatMessages((prev) => [...prev, newMessage]);
+    setChatPrompt("");
+
+    try {
+      const model = genAI.current.getGenerativeModel({
+        model: "gemini-1.5-flash-latest",
+      });
+
+      const chat = model.startChat({
+        generationConfig: {
+          maxOutputTokens: 1000,
+        },
+      });
+
+      const result = await chat.sendMessageStream(
+        `Based on the following extracted text, please answer the user's question: "${chatPrompt}"\n\nExtracted text:\n${extractedText}`,
+      );
+
+      let fullResponse = "";
+      const responseMessageId = Date.now();
+
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "", id: responseMessageId },
+      ]);
+
+      for await (const chunk of result.stream) {
+        fullResponse += chunk.text();
+        setChatMessages((prev) =>
+          prev.map((msg) =>
+            "id" in msg && msg.id === responseMessageId
+              ? { ...msg, content: fullResponse }
+              : msg,
+          ),
+        );
+      }
+    } catch (error) {
+      console.error("Error generating chat response:", error);
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "An error occurred. Please try again.",
+          id: Date.now(),
+        },
+      ]);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [chatPrompt, extractedText]);
+
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop =
+        scrollContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
+
   return (
     <div className="flex h-full w-full flex-col gap-y-4 md:flex-row md:gap-x-4 md:gap-y-0">
       <div className="h-full overflow-x-auto md:w-1/3">
@@ -280,35 +348,82 @@ Summary:`;
       </div>
       <div className="scrollbar h-full md:w-2/3">
         <Tabs
-          defaultValue="extractedText"
+          defaultValue="chatWithDocument"
           className="flex h-full w-full flex-col"
         >
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="extractedText">Extracted Text</TabsTrigger>
+            <TabsTrigger value="chatWithDocument">
+              Chat with Document
+            </TabsTrigger>
             <TabsTrigger value="summary">Summary</TabsTrigger>
           </TabsList>
           <TabsContent
-            value="extractedText"
-            className="scrollbar flex-grow overflow-hidden"
+            value="chatWithDocument"
+            className="flex-grow overflow-hidden rounded-md bg-black"
           >
             <div className="flex h-full flex-col overflow-hidden p-4">
-              <h2 className="mb-2 text-xl font-bold">Extracted Text</h2>
-              {isExtracting ? (
-                <Loader2 size="2rem" className="animate-spin" />
-              ) : (
-                <div className="scrollbar flex-grow overflow-y-auto whitespace-pre-wrap">
-                  {extractedText}
-                </div>
-              )}
+              <div
+                ref={scrollContainerRef}
+                className="scrollbar flex-grow overflow-y-auto"
+              >
+                {chatMessages.length === 0 ? (
+                  <EmptyScreen
+                    setChatPrompt={setChatPrompt}
+                    isExtracting={isExtracting}
+                  />
+                ) : (
+                  chatMessages.map((message, index) => (
+                    <ChatItem key={index} message={message} />
+                  ))
+                )}
+              </div>
+              <div className="mt-4">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    generateChatResponse();
+                  }}
+                >
+                  <div className="scrollbar relative flex max-h-60 w-full grow flex-col overflow-hidden rounded-md border">
+                    <Textarea
+                      placeholder={
+                        isExtracting
+                          ? ""
+                          : "Ask a question about the document..."
+                      }
+                      className="scrollbar bg-background3 min-h-[50px] w-full resize-none px-6 py-5 text-[12px] focus-within:outline-none"
+                      value={chatPrompt}
+                      onChange={(e) => setChatPrompt(e.target.value)}
+                      disabled={isExtracting}
+                    />
+                    <Button
+                      style={{ zIndex: 100 }}
+                      type="submit"
+                      className="absolute bottom-2 right-2 cursor-pointer rounded-md bg-bground3 text-white hover:bg-zinc-800 disabled:cursor-not-allowed"
+                      disabled={
+                        isGenerating || !chatPrompt.trim() || isExtracting
+                      }
+                    >
+                      <ArrowUpRight className="text-white" size={16} />
+                    </Button>
+                  </div>
+                </form>
+              </div>
             </div>
           </TabsContent>
           <TabsContent value="summary" className="flex-grow overflow-hidden">
             <div className="flex h-full flex-col p-4">
               <div className="scrollbar mb-4 flex-grow overflow-y-auto rounded bg-bground3 p-2 text-gray-300">
-                {<MarkdownRenderer content={response} /> ||
-                  error ||
-                  "Click 'Summarize Document' to generate a summary."}
-                {isGenerating && <span className="animate-pulse">|</span>}
+                {response ? (
+                  <MarkdownRenderer content={response} />
+                ) : error ? (
+                  <p className="text-red-500 text-lg">{error}</p>
+                ) : (
+                  <p className="flex h-full w-full items-center justify-center text-lg text-thintext">
+                    Click &quot;Summarize Document&quot; to generate a summary.
+                  </p>
+                )}
+                {isGenerating && <div className="animate-pulse">|</div>}
               </div>
               <Button
                 className="bg-bground3 font-medium text-white hover:bg-zinc-800"

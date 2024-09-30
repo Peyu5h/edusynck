@@ -127,17 +127,19 @@ export default function Assignments() {
           Deadline
         </Button>
       </div>
-      <div className="mb-4 flex gap-x-4 filter">
-        {subjects.map((subject: any, index) => (
-          <Button
-            key={index}
-            className={`px-4 pb-1 ${selectedSubject === subject ? "bg-bground2" : ""}`}
-            variant={selectedSubject === subject ? "secondary" : "outline"}
-            onClick={() => setSelectedSubject(subject)}
-          >
-            {subject === "all" ? "All Subjects" : subject}
-          </Button>
-        ))}
+      <div className="scrollbar-hide mb-4 overflow-x-auto">
+        <div className="flex gap-x-4 whitespace-nowrap filter">
+          {subjects.map((subject: any, index) => (
+            <Button
+              key={index}
+              className={`px-4 pb-1 ${selectedSubject === subject ? "bg-bground2" : ""}`}
+              variant={selectedSubject === subject ? "secondary" : "outline"}
+              onClick={() => setSelectedSubject(subject)}
+            >
+              {subject === "all" ? "All Subjects" : subject}
+            </Button>
+          ))}
+        </div>
       </div>
       <div className="grid w-full grid-cols-1 gap-6">
         {isLoading ? (
