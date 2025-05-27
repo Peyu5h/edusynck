@@ -1,0 +1,139 @@
+What is subnetting? Compare subnetting and supernetting.
+
+Explain the count-to-infinity problem in networking.
+
+Compare the OSI and TCP/IP reference models. List two similarities and two differences.
+
+What is session tracking? Explain how it is achieved using cookies.
+
+Define guided transmission media. Explain the structure and characteristics of coaxial cables.
+
+Explain how collision is handled in CSMA/CD.
+
+Explain the classful IP addressing scheme. List advantages and disadvantages of classless IP addressing.
+
+Explain the TCP connection establishment and termination process.
+
+Explain open-loop and closed-loop congestion control techniques.
+
+Describe the link state routing algorithm with an example.
+
+Explain the sliding window protocol. Compare Selective Repeat and Go-Back-N protocols.
+
+Write a short note on DNS.
+
+Explain AJAX and its role in web applications.
+
+Discuss various control structures in PHP with examples.
+
+What are spatial data structures? Outline their importance in GIS.
+
+What is Metadata? Why do we need metadata when search engines like Google seem so effective?
+
+Describe various methods for handling missing values in real-world datasets.
+
+Explain how visual objects can be detected using meta-objects in web mining.
+
+Explain the concept of a data warehouse schema. Draw a snowflake schema diagram for a university database.
+
+What is the relationship between data warehousing and data replication? Compare synchronous and asynchronous replication.
+
+Explain the decision tree algorithm and its application in classification problems.
+
+Discuss the significance of tree pruning in decision tree induction. Compare pruning before and after rule generation.
+
+Explain the k-means clustering algorithm with an example.
+
+How do we compute dissimilarity between objects using nominal attributes and asymmetric binary attributes?
+
+Discuss methods to mine frequent itemsets considering multiple occurrences of items in transactional data analysis.
+
+Differentiate between simple linkage, average linkage, and complete linkage clustering.
+
+Discuss data quality assessment in terms of accuracy, completeness, and consistency. Suggest two additional dimensions of data quality.
+
+Provide an example where data mining plays a crucial role in business success. Discuss required mining functionalities.
+
+Information requirements are recorded for “Hotel occupancy” considering dimensions like Hotel, Room, and Time. Few Facts recorded are vacant rooms, occupied rooms, number of occupants, etc. Answer the following:
+
+Design the star schema.
+
+Convert this star schema to a snowflake schema. Justify and draw the snowflake schema.
+
+Explain Data mining as a step in KDD. Illustrate the architecture of a typical data mining system.
+
+The college wants to record the Marks for courses completed by students using the dimensions: Course, Student, Time, and Measure: Aggregate marks. Perform the following OLAP operations: Rollup, Drill down, Slice, Dice, Pivot.
+
+Explain the Naïve Bayes classifier algorithm and its application in classification.
+
+Discuss Data Warehouse design strategies in detail.
+
+Discuss types of attributes and data visualization for data exploration.
+
+Discuss various OLAP models and their architecture.
+
+Explain the k-means clustering algorithm with an example.
+
+Discuss the process of extraction, transformation, and loading (ETL) with a neat and labeled diagram.
+
+Explain the Apriori Algorithm and the process of generating association rules.
+
+Applications of Data Mining (at least two in detail)
+
+Data pre-processing
+
+FP Tree
+
+Updates to dimension tables
+
+Metadata with examples
+
+What is Software Engineering? Explain the process framework in detail.
+
+Describe the Capability Maturity Model (CMM) and its levels.
+
+Explain the Waterfall model with its advantages and disadvantages.
+
+Explain Extreme Programming (XP) and its key practices.
+
+What is Scrum? Describe its framework and benefits.
+
+Explain the Kanban process in Agile software development.
+
+Describe the IEEE format for Software Requirement Specification (SRS) documents
+
+What are Software Metrics? Explain different types of software metrics.
+
+Describe the importance of Software Project Estimation.
+
+Explain the Lines of Code (LOC) and Function Point (FP) estimation techniques.
+
+What are the key principles of Software Design?
+
+Explain different Software Design concepts with examples.
+
+What is Modular Design? Explain the characteristics of an effective modular design.
+
+Define Cohesion and Coupling. How do they impact software design?
+
+Explain Architectural Design in Software Engineering.
+
+What is Software Testing? Explain its significance in the development process.
+
+Explain White-box Testing techniques such as Basis Path and Control Structure Testing.
+
+Describe Black-box Testing techniques: Graph-based, Equivalence, and Boundary Value Analysis.
+
+Explain the concepts of Software Re-Engineering and Reverse Engineering.
+
+What is Risk Analysis and Management in software development?
+
+Explain the Risk Mitigation, Monitoring, and Management Plan (RMMM).
+
+What are Quality Concepts in Software Engineering?
+
+What is a Formal Technical Review (FTR)? Explain its process.
+
+What is Software Configuration Management (SCM)?
+
+Explain the importance of Version Control and Change Control in software development.
