@@ -3,6 +3,7 @@ import productRoutes from "./product.route";
 import userRoutes from "./userRoute";
 import authRoutes from "./authRoute";
 import adminRoutes from "./adminOnlyRoute";
+import classRoutes from "./classRoute";
 
 const indexRoute = new Hono();
 
@@ -16,5 +17,6 @@ indexRoute.route("/products", productRoutes);
 indexRoute.route("/user", userRoutes);
 indexRoute.route("/auth", authRoutes);
 indexRoute.route("/admin", adminRoutes);
+indexRoute.route("/class", classRoutes);
 
 export default indexRoute;

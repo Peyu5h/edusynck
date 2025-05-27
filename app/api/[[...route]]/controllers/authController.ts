@@ -319,3 +319,47 @@ export const getCurrentUser = async (c: Context) => {
     );
   }
 };
+
+export const getUser = async (c: Context) => {
+  try {
+    const body = await c.req.json();
+    const { userId } = body;
+
+    if (!userId) {
+      return c.json({ error: "User ID is required" }, 400);
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        class: true,
+        notifications: true,
+        assignments: true,
+        votedPolls: true,
+        createdPolls: true,
+        taughtClasses: {
+          include: {
+            courses: true,
+            students: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return c.json({ error: "User not found" }, 404);
+    }
+
+    const { password, ...userWithoutPassword } = user;
+    return c.json(userWithoutPassword);
+  } catch (error) {
+    console.error("Error getting user:", error);
+    return c.json(
+      {
+        error: "Failed to get user",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      500,
+    );
+  }
+};
