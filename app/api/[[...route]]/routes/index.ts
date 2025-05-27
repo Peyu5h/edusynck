@@ -1,5 +1,8 @@
 import { Hono } from "hono";
 import productRoutes from "./product.route";
+import userRoutes from "./userRoute";
+import authRoutes from "./authRoute";
+import adminRoutes from "./adminOnlyRoute";
 
 const indexRoute = new Hono();
 
@@ -10,5 +13,8 @@ indexRoute.get("/", (c) => {
 
 // routes
 indexRoute.route("/products", productRoutes);
+indexRoute.route("/user", userRoutes);
+indexRoute.route("/auth", authRoutes);
+indexRoute.route("/admin", adminRoutes);
 
 export default indexRoute;
