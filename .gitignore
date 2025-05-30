@@ -38,3 +38,4 @@ next-env.d.ts
 .cursor/
 
 /generated/prisma
+/app/api/[[...route]]/config/key.json

@@ -12,6 +12,9 @@ import {
   getFileType,
   organizeAssignmentMaterials,
   parseDueDate,
+  type DueDate,
+  type DueTime,
+  type Material,
 } from "../utils/functions";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -161,7 +164,10 @@ export const getAllAssignments = async (c: Context) => {
         });
 
       return courseWork.map((ga) => {
-        const dueDate = parseDueDate(ga.dueDate, ga.dueTime);
+        const dueDate = parseDueDate(
+          ga.dueDate as unknown as DueDate | null,
+          ga.dueTime as unknown as DueTime | null,
+        );
         const formattedDueDate = formatDueDate(dueDate);
         return {
           googleId: ga.id,
@@ -169,7 +175,9 @@ export const getAllAssignments = async (c: Context) => {
           description: ga.description,
           dueDate: formattedDueDate,
           alternateLink: ga.alternateLink,
-          materials: organizeAssignmentMaterials(ga.materials),
+          materials: organizeAssignmentMaterials(
+            ga.materials as unknown as Material[] | undefined,
+          ),
           type: ga.materials?.[0]?.driveFile?.driveFile?.title
             ? getFileType(
                 extname(ga.materials[0].driveFile.driveFile.title)
@@ -295,26 +303,77 @@ export const extractTextFromPptxUrl = async (c: Context) => {
 };
 
 export const getYoutubeVideos = async (c: Context) => {
-  const { keywords } = await c.req.json();
-
-  if (!keywords || typeof keywords !== "string") {
-    return c.json({ error: "Keywords are required" }, 400);
-  }
-
-  const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-
   try {
-    const response = await fetch(
-      `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
-        keywords,
-      )}&type=video&maxResults=4&key=${YOUTUBE_API_KEY}`,
+    const { keywords } = await c.req.json();
+
+    if (!keywords || typeof keywords !== "string") {
+      return c.json({ error: "Keywords are required" }, 400);
+    }
+
+    const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+    if (!YOUTUBE_API_KEY) {
+      console.error("YouTube API key is not configured");
+      return c.json({ error: "YouTube API key is not configured" }, 500);
+    }
+
+    // Log the first few characters of the API key for debugging (safely)
+    console.log("API Key prefix:", YOUTUBE_API_KEY.substring(0, 5) + "...");
+
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
+      keywords,
+    )}&type=video&maxResults=4&key=${YOUTUBE_API_KEY}`;
+
+    console.log("Making YouTube API request to:", url);
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+
+    const responseText = await response.text();
+    console.log("YouTube API Response Status:", response.status);
+    console.log(
+      "YouTube API Response Headers:",
+      JSON.stringify(Object.fromEntries(response.headers.entries())),
     );
 
     if (!response.ok) {
-      throw new Error("YouTube API request failed");
+      console.error("YouTube API error response:", responseText);
+
+      // Handle specific error cases
+      if (response.status === 403) {
+        return c.json(
+          {
+            error: "YouTube API access denied",
+            message:
+              "Please check if the API key is valid and has the correct permissions. Make sure YouTube Data API v3 is enabled in your Google Cloud Console.",
+            details: responseText,
+          },
+          403,
+        );
+      }
+
+      throw new Error(
+        `YouTube API request failed: ${response.status} ${response.statusText}`,
+      );
     }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error("Failed to parse YouTube API response:", responseText);
+      throw new Error("Invalid response from YouTube API");
+    }
+
+    if (!data.items || !Array.isArray(data.items)) {
+      console.error("Unexpected YouTube API response format:", data);
+      throw new Error("Unexpected response format from YouTube API");
+    }
+
     return c.json(data);
   } catch (error) {
     console.error("Error fetching YouTube videos:", error);

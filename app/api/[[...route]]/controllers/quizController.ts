@@ -1,11 +1,12 @@
-import { Request, Response } from "express";
-import prisma from "../config/db.js";
+import { Context } from "hono";
+import { prisma } from "~/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY as string);
 
-export const createQuiz = async (req: Request, res: Response) => {
+export const createQuiz = async (c: Context) => {
   try {
+    const body = await c.req.json();
     const {
       title,
       description,
@@ -17,14 +18,17 @@ export const createQuiz = async (req: Request, res: Response) => {
       duration,
       isAiGenerated,
       contentForAi,
-    } = req.body;
+      userId,
+    } = body;
 
-    const userId = req.body.userId;
     if (!title || !courseId || !userId) {
-      return res.status(400).json({
-        success: false,
-        message: "Title, course ID, and user ID are required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Title, course ID, and user ID are required",
+        },
+        400,
+      );
     }
 
     let quizQuestions = questions;
@@ -33,20 +37,26 @@ export const createQuiz = async (req: Request, res: Response) => {
         quizQuestions = await generateQuestionsWithAI(contentForAi);
       } catch (aiError) {
         console.error("Error generating questions with AI:", aiError);
-        return res.status(500).json({
-          success: false,
-          message: "Failed to generate questions with AI",
-        });
+        return c.json(
+          {
+            success: false,
+            message: "Failed to generate questions with AI",
+          },
+          500,
+        );
       }
     } else if (
       !questions ||
       !Array.isArray(questions) ||
       questions.length === 0
     ) {
-      return res.status(400).json({
-        success: false,
-        message: "Questions are required for manual quiz creation",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Questions are required for manual quiz creation",
+        },
+        400,
+      );
     }
 
     const quiz = await prisma.quiz.create({
@@ -75,28 +85,34 @@ export const createQuiz = async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(200).json({
+    return c.json({
       success: true,
       data: quiz,
     });
   } catch (error) {
     console.error("Error creating quiz:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to create quiz",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to create quiz",
+      },
+      500,
+    );
   }
 };
 
-export const getQuizzesByCourse = async (req: Request, res: Response) => {
+export const getQuizzesByCourse = async (c: Context) => {
   try {
-    const { courseId } = req.params;
+    const courseId = c.req.param("courseId");
 
     if (!courseId) {
-      return res.status(400).json({
-        success: false,
-        message: "Course ID is required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Course ID is required",
+        },
+        400,
+      );
     }
 
     const quizzes = await prisma.quiz.findMany({
@@ -109,29 +125,35 @@ export const getQuizzesByCourse = async (req: Request, res: Response) => {
       orderBy: { createdAt: "desc" },
     });
 
-    return res.status(200).json({
+    return c.json({
       success: true,
       data: quizzes,
     });
   } catch (error) {
     console.error("Error fetching quizzes:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch quizzes",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to fetch quizzes",
+      },
+      500,
+    );
   }
 };
 
-export const getQuizById = async (req: Request, res: Response) => {
+export const getQuizById = async (c: Context) => {
   try {
-    const { quizId } = req.params;
-    const userId = req.query.userId as string;
+    const quizId = c.req.param("quizId");
+    const userId = c.req.query("userId");
 
     if (!quizId) {
-      return res.status(400).json({
-        success: false,
-        message: "Quiz ID is required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Quiz ID is required",
+        },
+        400,
+      );
     }
 
     const quiz = await prisma.quiz.findUnique({
@@ -150,10 +172,13 @@ export const getQuizById = async (req: Request, res: Response) => {
     });
 
     if (!quiz) {
-      return res.status(404).json({
-        success: false,
-        message: "Quiz not found",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Quiz not found",
+        },
+        404,
+      );
     }
 
     let studentAttempt = null;
@@ -174,23 +199,26 @@ export const getQuizById = async (req: Request, res: Response) => {
       }
     }
 
-    return res.status(200).json({
+    return c.json({
       ...quiz,
       hasAttempted: !!studentAttempt,
       attemptStatus: studentAttempt?.status || null,
     });
   } catch (error) {
     console.error("Error fetching quiz:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch quiz",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to fetch quiz",
+      },
+      500,
+    );
   }
 };
 
-export const updateQuiz = async (req: Request, res: Response) => {
+export const updateQuiz = async (c: Context) => {
   try {
-    const { quizId } = req.params;
+    const quizId = c.req.param("quizId");
     const {
       title,
       description,
@@ -199,13 +227,16 @@ export const updateQuiz = async (req: Request, res: Response) => {
       endTime,
       duration,
       questions,
-    } = req.body;
+    } = await c.req.json();
 
     if (!quizId) {
-      return res.status(400).json({
-        success: false,
-        message: "Quiz ID is required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Quiz ID is required",
+        },
+        400,
+      );
     }
 
     const existingQuiz = await prisma.quiz.findUnique({
@@ -214,10 +245,13 @@ export const updateQuiz = async (req: Request, res: Response) => {
     });
 
     if (!existingQuiz) {
-      return res.status(404).json({
-        success: false,
-        message: "Quiz not found",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Quiz not found",
+        },
+        404,
+      );
     }
 
     const quiz = await prisma.quiz.update({
@@ -255,28 +289,34 @@ export const updateQuiz = async (req: Request, res: Response) => {
       include: { questions: true },
     });
 
-    return res.status(200).json({
+    return c.json({
       success: true,
       data: updatedQuiz,
     });
   } catch (error) {
     console.error("Error updating quiz:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to update quiz",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to update quiz",
+      },
+      500,
+    );
   }
 };
 
-export const deleteQuiz = async (req: Request, res: Response) => {
+export const deleteQuiz = async (c: Context) => {
   try {
-    const { quizId } = req.params;
+    const quizId = c.req.param("quizId");
 
     if (!quizId) {
-      return res.status(400).json({
-        success: false,
-        message: "Quiz ID is required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Quiz ID is required",
+        },
+        400,
+      );
     }
 
     const existingQuiz = await prisma.quiz.findUnique({
@@ -284,39 +324,48 @@ export const deleteQuiz = async (req: Request, res: Response) => {
     });
 
     if (!existingQuiz) {
-      return res.status(404).json({
-        success: false,
-        message: "Quiz not found",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Quiz not found",
+        },
+        404,
+      );
     }
 
     await prisma.quiz.delete({
       where: { id: quizId },
     });
 
-    return res.status(200).json({
+    return c.json({
       success: true,
       message: "Quiz deleted successfully",
     });
   } catch (error) {
     console.error("Error deleting quiz:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to delete quiz",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to delete quiz",
+      },
+      500,
+    );
   }
 };
 
-export const startQuizAttempt = async (req: Request, res: Response) => {
+export const startQuizAttempt = async (c: Context) => {
   try {
-    const { quizId } = req.params;
-    const { userId } = req.body;
+    const quizId = c.req.param("quizId");
+    const { userId } = await c.req.json();
 
     if (!quizId || !userId) {
-      return res.status(400).json({
-        success: false,
-        message: "Quiz ID and user ID are required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Quiz ID and user ID are required",
+        },
+        400,
+      );
     }
 
     const quiz = await prisma.quiz.findUnique({
@@ -330,10 +379,13 @@ export const startQuizAttempt = async (req: Request, res: Response) => {
     });
 
     if (!quiz) {
-      return res.status(404).json({
-        success: false,
-        message: "Quiz not found or not currently active",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Quiz not found or not currently active",
+        },
+        404,
+      );
     }
 
     const existingAttempt = await prisma.studentQuizAttempt.findFirst({
@@ -346,13 +398,16 @@ export const startQuizAttempt = async (req: Request, res: Response) => {
 
     if (existingAttempt) {
       if (existingAttempt.status === "COMPLETED") {
-        return res.status(400).json({
-          success: false,
-          message: "You have already completed this quiz",
-        });
+        return c.json(
+          {
+            success: false,
+            message: "You have already completed this quiz",
+          },
+          400,
+        );
       }
 
-      return res.status(200).json(existingAttempt);
+      return c.json(existingAttempt);
     }
 
     const attempt = await prisma.studentQuizAttempt.create({
@@ -363,26 +418,32 @@ export const startQuizAttempt = async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(200).json(attempt);
+    return c.json(attempt);
   } catch (error) {
     console.error("Error starting quiz attempt:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to start quiz attempt",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to start quiz attempt",
+      },
+      500,
+    );
   }
 };
 
-export const submitQuizAnswer = async (req: Request, res: Response) => {
+export const submitQuizAnswer = async (c: Context) => {
   try {
-    const { attemptId } = req.params;
-    const { questionId, selectedOption } = req.body;
+    const attemptId = c.req.param("attemptId");
+    const { questionId, selectedOption } = await c.req.json();
 
     if (!attemptId || !questionId || selectedOption === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: "Attempt ID, question ID, and selected option are required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Attempt ID, question ID, and selected option are required",
+        },
+        400,
+      );
     }
 
     const attempt = await prisma.studentQuizAttempt.findFirst({
@@ -393,10 +454,13 @@ export const submitQuizAnswer = async (req: Request, res: Response) => {
     });
 
     if (!attempt) {
-      return res.status(404).json({
-        success: false,
-        message: "Attempt not found or already completed",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Attempt not found or already completed",
+        },
+        404,
+      );
     }
 
     const question = await prisma.quizQuestion.findUnique({
@@ -404,10 +468,13 @@ export const submitQuizAnswer = async (req: Request, res: Response) => {
     });
 
     if (!question) {
-      return res.status(404).json({
-        success: false,
-        message: "Question not found",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Question not found",
+        },
+        404,
+      );
     }
 
     const existingAnswer = await prisma.studentQuestionAnswer.findFirst({
@@ -440,28 +507,34 @@ export const submitQuizAnswer = async (req: Request, res: Response) => {
       });
     }
 
-    return res.status(200).json({
+    return c.json({
       success: true,
       message: "Answer submitted successfully",
     });
   } catch (error) {
     console.error("Error submitting answer:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to submit answer",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to submit answer",
+      },
+      500,
+    );
   }
 };
 
-export const completeQuizAttempt = async (req: Request, res: Response) => {
+export const completeQuizAttempt = async (c: Context) => {
   try {
-    const { attemptId } = req.params;
+    const attemptId = c.req.param("attemptId");
 
     if (!attemptId) {
-      return res.status(400).json({
-        success: false,
-        message: "Attempt ID is required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Attempt ID is required",
+        },
+        400,
+      );
     }
 
     const attempt = await prisma.studentQuizAttempt.findFirst({
@@ -480,10 +553,13 @@ export const completeQuizAttempt = async (req: Request, res: Response) => {
     });
 
     if (!attempt) {
-      return res.status(404).json({
-        success: false,
-        message: "Attempt not found or already completed",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Attempt not found or already completed",
+        },
+        404,
+      );
     }
 
     let score = 0;
@@ -514,25 +590,31 @@ export const completeQuizAttempt = async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(200).json(completedAttempt);
+    return c.json(completedAttempt);
   } catch (error) {
     console.error("Error completing quiz attempt:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to complete quiz attempt",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to complete quiz attempt",
+      },
+      500,
+    );
   }
 };
 
-export const getQuizLeaderboard = async (req: Request, res: Response) => {
+export const getQuizLeaderboard = async (c: Context) => {
   try {
-    const { quizId } = req.params;
+    const quizId = c.req.param("quizId");
 
     if (!quizId) {
-      return res.status(400).json({
-        success: false,
-        message: "Quiz ID is required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Quiz ID is required",
+        },
+        400,
+      );
     }
 
     const quiz = await prisma.quiz.findUnique({
@@ -541,10 +623,13 @@ export const getQuizLeaderboard = async (req: Request, res: Response) => {
     });
 
     if (!quiz) {
-      return res.status(404).json({
-        success: false,
-        message: "Quiz not found",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Quiz not found",
+        },
+        404,
+      );
     }
 
     const attempts = await prisma.studentQuizAttempt.findMany({
@@ -582,29 +667,35 @@ export const getQuizLeaderboard = async (req: Request, res: Response) => {
       };
     });
 
-    return res.status(200).json({
+    return c.json({
       success: true,
       quiz,
       leaderboard,
     });
   } catch (error) {
     console.error("Error fetching quiz leaderboard:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch quiz leaderboard",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to fetch quiz leaderboard",
+      },
+      500,
+    );
   }
 };
 
-export const getStudentQuizAttempts = async (req: Request, res: Response) => {
+export const getStudentQuizAttempts = async (c: Context) => {
   try {
-    const { userId } = req.params;
+    const userId = c.req.param("userId");
 
     if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: "User ID is required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "User ID is required",
+        },
+        400,
+      );
     }
 
     const attempts = await prisma.studentQuizAttempt.findMany({
@@ -630,16 +721,19 @@ export const getStudentQuizAttempts = async (req: Request, res: Response) => {
       orderBy: { startedAt: "desc" },
     });
 
-    return res.status(200).json({
+    return c.json({
       success: true,
       data: attempts,
     });
   } catch (error) {
     console.error("Error fetching student attempts:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch student attempts",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to fetch student attempts",
+      },
+      500,
+    );
   }
 };
 
@@ -686,35 +780,41 @@ export async function generateQuestionsWithAI(content: string) {
   }
 }
 
-export const generateQuestionsApi = async (req: Request, res: Response) => {
+export const generateQuestionsApi = async (c: Context) => {
   try {
-    const { content } = req.body;
+    const { content } = await c.req.json();
 
     if (!content) {
-      return res.status(400).json({
-        success: false,
-        message: "Content is required for generating questions",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Content is required for generating questions",
+        },
+        400,
+      );
     }
 
     const questions = await generateQuestionsWithAI(content);
-    return res.status(200).json({
+    return c.json({
       success: true,
       data: questions,
     });
   } catch (error) {
     console.error("Error generating questions with AI:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to generate questions with AI",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to generate questions with AI",
+      },
+      500,
+    );
   }
 };
 
-export const getActiveQuizzesByCourse = async (req: Request, res: Response) => {
+export const getActiveQuizzesByCourse = async (c: Context) => {
   try {
-    const courseId = req.query.courseId as string;
-    const userId = req.query.userId as string;
+    const courseId = c.req.query("courseId");
+    const userId = c.req.query("userId");
 
     const filters: any = {
       status: "ACTIVE",
@@ -763,28 +863,34 @@ export const getActiveQuizzesByCourse = async (req: Request, res: Response) => {
       );
     }
 
-    return res.status(200).json({
+    return c.json({
       success: true,
       data: quizzesWithAttempts,
     });
   } catch (error) {
     console.error("Error fetching active quizzes:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch active quizzes",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to fetch active quizzes",
+      },
+      500,
+    );
   }
 };
 
-export const getAttemptById = async (req: Request, res: Response) => {
+export const getAttemptById = async (c: Context) => {
   try {
-    const { attemptId } = req.params;
+    const attemptId = c.req.param("attemptId");
 
     if (!attemptId) {
-      return res.status(400).json({
-        success: false,
-        message: "Attempt ID is required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Attempt ID is required",
+        },
+        400,
+      );
     }
 
     const attempt = await prisma.studentQuizAttempt.findUnique({
@@ -804,31 +910,40 @@ export const getAttemptById = async (req: Request, res: Response) => {
     });
 
     if (!attempt) {
-      return res.status(404).json({
-        success: false,
-        message: "Attempt not found",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Attempt not found",
+        },
+        404,
+      );
     }
 
-    return res.status(200).json(attempt);
+    return c.json(attempt);
   } catch (error) {
     console.error("Error fetching attempt:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch attempt",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to fetch attempt",
+      },
+      500,
+    );
   }
 };
 
-export const getAttemptAnswers = async (req: Request, res: Response) => {
+export const getAttemptAnswers = async (c: Context) => {
   try {
-    const { attemptId } = req.params;
+    const attemptId = c.req.param("attemptId");
 
     if (!attemptId) {
-      return res.status(400).json({
-        success: false,
-        message: "Attempt ID is required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Attempt ID is required",
+        },
+        400,
+      );
     }
 
     const answers = await prisma.studentQuestionAnswer.findMany({
@@ -840,28 +955,34 @@ export const getAttemptAnswers = async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(200).json({
+    return c.json({
       success: true,
       answers,
     });
   } catch (error) {
     console.error("Error fetching attempt answers:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch attempt answers",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to fetch attempt answers",
+      },
+      500,
+    );
   }
 };
 
-export const getAttemptResults = async (req: Request, res: Response) => {
+export const getAttemptResults = async (c: Context) => {
   try {
-    const { attemptId } = req.params;
+    const attemptId = c.req.param("attemptId");
 
     if (!attemptId) {
-      return res.status(400).json({
-        success: false,
-        message: "Attempt ID is required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Attempt ID is required",
+        },
+        400,
+      );
     }
 
     const attempt = await prisma.studentQuizAttempt.findUnique({
@@ -886,38 +1007,50 @@ export const getAttemptResults = async (req: Request, res: Response) => {
     });
 
     if (!attempt) {
-      return res.status(404).json({
-        success: false,
-        message: "Attempt not found",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Attempt not found",
+        },
+        404,
+      );
     }
 
     if (attempt.status !== "COMPLETED") {
-      return res.status(400).json({
-        success: false,
-        message: "This attempt has not been completed yet",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "This attempt has not been completed yet",
+        },
+        400,
+      );
     }
 
-    return res.status(200).json(attempt);
+    return c.json(attempt);
   } catch (error) {
     console.error("Error fetching attempt results:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch attempt results",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to fetch attempt results",
+      },
+      500,
+    );
   }
 };
 
-export const getQuizProgress = async (req: Request, res: Response) => {
+export const getQuizProgress = async (c: Context) => {
   try {
-    const { quizId } = req.params;
+    const quizId = c.req.param("quizId");
 
     if (!quizId) {
-      return res.status(400).json({
-        success: false,
-        message: "Quiz ID is required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Quiz ID is required",
+        },
+        400,
+      );
     }
 
     const quiz = await prisma.quiz.findUnique({
@@ -928,10 +1061,13 @@ export const getQuizProgress = async (req: Request, res: Response) => {
     });
 
     if (!quiz) {
-      return res.status(404).json({
-        success: false,
-        message: "Quiz not found",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Quiz not found",
+        },
+        404,
+      );
     }
 
     const enrolledStudents = await prisma.user.findMany({
@@ -1023,16 +1159,19 @@ export const getQuizProgress = async (req: Request, res: Response) => {
       lowestScore,
     };
 
-    return res.status(200).json({
+    return c.json({
       success: true,
       students: studentProgress,
       progress,
     });
   } catch (error) {
     console.error("Error fetching quiz progress:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch quiz progress",
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to fetch quiz progress",
+      },
+      500,
+    );
   }
 };

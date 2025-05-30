@@ -30,7 +30,7 @@ const Header = () => {
 
   return (
     <div>
-      <div className="mb-2 flex w-full items-center justify-between rounded-xl px-4 pt-4">
+      <div className="flex w-full items-center justify-between rounded-xl px-4">
         {isAssignment ? (
           <div className="">
             <h1 className="mt-2 text-3xl font-light text-text">

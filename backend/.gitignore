@@ -1,6 +1,0 @@
-.env
-/node_modules
-.cursor/
-.cursor/rules/
-dist/
-/dist

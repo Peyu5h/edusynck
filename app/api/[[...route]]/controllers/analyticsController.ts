@@ -1,31 +1,41 @@
-import prisma from "../config/db.js";
+import { Context } from "hono";
+import { prisma } from "~/lib/prisma";
 
-export const saveWrongAnswers = async (req, res) => {
+export const saveWrongAnswers = async (c: Context) => {
   try {
-    const { userId, wrongAnswers } = req.body;
+    const { userId, wrongAnswers } = await c.req.json();
 
     if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: "User ID is required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "User ID is required",
+        },
+        400,
+      );
     }
 
     if (!wrongAnswers || !Array.isArray(wrongAnswers)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid wrong answers data",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "Invalid wrong answers data",
+        },
+        400,
+      );
     }
 
     // Allow empty array (just log it)
     if (wrongAnswers.length === 0) {
       console.log("Received empty wrong answers array for user:", userId);
-      return res.status(200).json({
-        success: true,
-        message: "No wrong answers to save",
-        data: [],
-      });
+      return c.json(
+        {
+          success: true,
+          message: "No wrong answers to save",
+          data: [],
+        },
+        200,
+      );
     }
 
     // Verify user exists
@@ -34,10 +44,13 @@ export const saveWrongAnswers = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "User not found",
+        },
+        404,
+      );
     }
 
     // Create wrong answers records
@@ -65,18 +78,24 @@ export const saveWrongAnswers = async (req, res) => {
       }),
     );
 
-    return res.status(201).json({
-      success: true,
-      message: "Wrong answers saved successfully",
-      data: createdWrongAnswers,
-    });
+    return c.json(
+      {
+        success: true,
+        message: "Wrong answers saved successfully",
+        data: createdWrongAnswers,
+      },
+      201,
+    );
   } catch (error) {
     console.error("Error saving wrong answers:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to save wrong answers",
-      error: error.message,
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to save wrong answers",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      500,
+    );
   }
 };
 
@@ -84,15 +103,18 @@ export const saveWrongAnswers = async (req, res) => {
  * Get wrong answers by user ID
  * @route GET /api/analytics/wrong-answers/:userId
  */
-export const getWrongAnswersByUser = async (req, res) => {
+export const getWrongAnswersByUser = async (c: Context) => {
   try {
-    const { userId } = req.params;
+    const userId = c.req.param("userId");
 
     if (!userId) {
-      return res.status(400).json({
-        success: false,
-        message: "User ID is required",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "User ID is required",
+        },
+        400,
+      );
     }
 
     // Verify user exists
@@ -101,10 +123,13 @@ export const getWrongAnswersByUser = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return c.json(
+        {
+          success: false,
+          message: "User not found",
+        },
+        404,
+      );
     }
 
     // Get wrong answers for the user
@@ -113,16 +138,22 @@ export const getWrongAnswersByUser = async (req, res) => {
       orderBy: { timestamp: "desc" },
     });
 
-    return res.status(200).json({
-      success: true,
-      data: wrongAnswers,
-    });
+    return c.json(
+      {
+        success: true,
+        data: wrongAnswers,
+      },
+      200,
+    );
   } catch (error) {
     console.error("Error retrieving wrong answers:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to retrieve wrong answers",
-      error: error.message,
-    });
+    return c.json(
+      {
+        success: false,
+        message: "Failed to retrieve wrong answers",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      500,
+    );
   }
 };

@@ -1,9 +1,11 @@
 import { Hono } from "hono";
-import productRoutes from "./product.route";
 import userRoutes from "./userRoute";
 import authRoutes from "./authRoute";
 import adminRoutes from "./adminOnlyRoute";
 import classRoutes from "./classRoute";
+import quizRoutes from "./quizRoute";
+import analyticsRoutes from "./analyticsRoute";
+import messageRoutes from "./messageRoute";
 
 const indexRoute = new Hono();
 
@@ -13,10 +15,12 @@ indexRoute.get("/", (c) => {
 });
 
 // routes
-indexRoute.route("/products", productRoutes);
 indexRoute.route("/user", userRoutes);
 indexRoute.route("/auth", authRoutes);
 indexRoute.route("/admin", adminRoutes);
 indexRoute.route("/class", classRoutes);
+indexRoute.route("/quiz", quizRoutes);
+indexRoute.route("/analytics", analyticsRoutes);
+indexRoute.route("/chat", messageRoutes);
 
 export default indexRoute;

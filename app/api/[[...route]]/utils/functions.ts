@@ -8,13 +8,13 @@ import {
   isBefore,
 } from "date-fns";
 
-interface Link {
+export interface Link {
   url: string;
   title: string;
   thumbnailUrl: string;
 }
 
-interface File {
+export interface File {
   id: string;
   title: string;
   alternateLink: string;
@@ -23,12 +23,12 @@ interface File {
   type: string;
 }
 
-interface OrganizedMaterials {
+export interface OrganizedMaterials {
   links: Link[];
   files: File[];
 }
 
-interface Material {
+export interface Material {
   link?: {
     url: string;
     title: string;
@@ -44,13 +44,13 @@ interface Material {
   };
 }
 
-interface DueDate {
+export interface DueDate {
   year: number;
   month: number;
   day: number;
 }
 
-interface DueTime {
+export interface DueTime {
   hours?: number;
   minutes?: number;
 }
