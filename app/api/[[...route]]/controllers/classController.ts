@@ -6,6 +6,10 @@ import {
   getFileType,
   organizeAssignmentMaterials,
   parseDueDate,
+  type DueDate,
+  type DueTime,
+  type Material,
+  type OrganizedMaterials,
 } from "../utils/functions";
 import { extname } from "path";
 
@@ -113,7 +117,10 @@ export const getCourses = async (c: Context) => {
             const teachersResponse = await classroom.courses.teachers.list({
               courseId: course?.googleClassroomId,
             });
-            const primaryTeacher = teachersResponse.data.teachers[0];
+
+            // Handle possibly undefined teachers array
+            const teachers = teachersResponse.data.teachers || [];
+            const primaryTeacher = teachers[0];
 
             await prisma.course.update({
               where: { id: course.id },
@@ -186,37 +193,55 @@ export const getAssignments = async (c: Context) => {
 
     const organizedAssignments = await Promise.all(
       courseWork.map(async (ga) => {
-        const dueDate = parseDueDate(ga.dueDate, ga.dueTime);
+        // Safe type assertions for Google API types
+        const dueDate = parseDueDate(
+          ga.dueDate as unknown as DueDate | null,
+          ga.dueTime as unknown as DueTime | null,
+        );
         const formattedDueDate = formatDueDate(dueDate);
 
+        // Safely access materials with null checks
+        const materials = ga.materials as unknown as Material[] | undefined;
+        const organizedMaterials = organizeAssignmentMaterials(materials);
+
+        // Extract file type safely with null checks
+        let fileType = "";
+        let thumbnailUrl = "";
+
+        if (ga.materials?.[0]?.driveFile?.driveFile) {
+          const file = ga.materials[0].driveFile.driveFile;
+          if (file.title) {
+            fileType = getFileType(extname(file.title).toLowerCase().slice(1));
+          }
+          thumbnailUrl = file.thumbnailUrl || "";
+        }
+
         const localAssignment = await prisma.assignment.upsert({
-          where: { googleId: ga.id },
+          where: {
+            googleId: ga.id || `no-id-${Date.now()}`,
+          },
           update: {
-            title: ga.title,
-            description: ga.description,
+            title: ga.title || "",
+            description: ga.description || "",
             dueDate,
-            materials: organizeAssignmentMaterials(ga.materials),
-            type: getFileType(
-              extname(ga.materials[0].driveFile.driveFile.title)
-                .toLowerCase()
-                .slice(1),
-            ),
-            thumbnail: ga.materials[0].driveFile.driveFile.thumbnailUrl,
-            alternateLink: ga.alternateLink,
+            // Need to stringify the complex object for Prisma JSON field
+            materials: JSON.stringify(organizedMaterials) as any,
+            type: fileType,
+            thumbnail: thumbnailUrl,
+            alternateLink: ga.alternateLink || "",
             lastUpdated: new Date(),
           },
           create: {
-            googleId: ga.id,
-            title: ga.title,
-            description: ga.description,
+            googleId: ga.id || `no-id-${Date.now()}`,
+            title: ga.title || "",
+            description: ga.description || "",
             dueDate,
             courseId,
-            materials: organizeAssignmentMaterials(ga.materials),
-            type: extname(ga.materials[0].driveFile.driveFile.title)
-              .toLowerCase()
-              .slice(1),
-            thumbnail: ga.materials[0].driveFile.driveFile.thumbnailUrl,
-            alternateLink: ga.alternateLink,
+            // Need to stringify the complex object for Prisma JSON field
+            materials: JSON.stringify(organizedMaterials) as any,
+            type: fileType,
+            thumbnail: thumbnailUrl,
+            alternateLink: ga.alternateLink || "",
           },
         });
 
@@ -272,43 +297,47 @@ export const getMaterials = async (c: Context) => {
       fields: "courseWorkMaterial(id,title,materials,alternateLink)",
     });
 
-    const organizedMaterials = materialsResponse.data.courseWorkMaterial.map(
-      (material) => {
-        const organizedContent = {
-          id: material.id,
-          title: material.title,
-          googleClassroomId: courseId,
-          alternateLink: material.alternateLink,
-          links: [],
-          files: [],
-        };
+    // Handle possibly undefined courseWorkMaterial
+    const courseWorkMaterials = materialsResponse.data.courseWorkMaterial || [];
 
-        if (material.materials) {
-          material.materials.forEach((item) => {
-            if (item.link) {
-              organizedContent.links.push({
-                url: item.link.url,
-                title: item.link.title,
-                thumbnailUrl: item.link.thumbnailUrl,
-              });
-            } else if (item.driveFile) {
-              const file = item.driveFile.driveFile;
-              const extension = extname(file.title).toLowerCase().slice(1);
-              organizedContent.files.push({
-                id: file.id,
-                title: file.title,
-                alternateLink: file.alternateLink,
-                thumbnailUrl: file.thumbnailUrl,
-                extension: extension,
-                type: getFileType(extension),
-              });
-            }
-          });
-        }
+    const organizedMaterials = courseWorkMaterials.map((material) => {
+      const organizedContent = {
+        id: material.id,
+        title: material.title,
+        googleClassroomId: courseId,
+        alternateLink: material.alternateLink,
+        links: [] as any[],
+        files: [] as any[],
+      };
 
-        return organizedContent;
-      },
-    );
+      if (material.materials) {
+        material.materials.forEach((item) => {
+          if (item.link) {
+            organizedContent.links.push({
+              url: item.link.url || "",
+              title: item.link.title || "",
+              thumbnailUrl: item.link.thumbnailUrl || "",
+            });
+          } else if (item.driveFile && item.driveFile.driveFile) {
+            const file = item.driveFile.driveFile;
+            const extension = file.title
+              ? extname(file.title).toLowerCase().slice(1)
+              : "";
+
+            organizedContent.files.push({
+              id: file.id || "",
+              title: file.title || "",
+              alternateLink: file.alternateLink || "",
+              thumbnailUrl: file.thumbnailUrl || "",
+              extension: extension,
+              type: getFileType(extension),
+            });
+          }
+        });
+      }
+
+      return organizedContent;
+    });
 
     return c.json(organizedMaterials);
   } catch (error) {
@@ -343,26 +372,29 @@ export const getOneMaterial = async (c: Context) => {
       googleClassroomId: courseId,
       title: material.title,
       alternateLink: material.alternateLink,
-      links: [],
-      files: [],
+      links: [] as any[],
+      files: [] as any[],
     };
 
     if (material.materials) {
       material.materials.forEach((item) => {
         if (item.link) {
           organizedContent.links.push({
-            url: item.link.url,
-            title: item.link.title,
-            thumbnailUrl: item.link.thumbnailUrl,
+            url: item.link.url || "",
+            title: item.link.title || "",
+            thumbnailUrl: item.link.thumbnailUrl || "",
           });
-        } else if (item.driveFile) {
+        } else if (item.driveFile && item.driveFile.driveFile) {
           const file = item.driveFile.driveFile;
-          const extension = extname(file.title).toLowerCase().slice(1);
+          const extension = file.title
+            ? extname(file.title).toLowerCase().slice(1)
+            : "";
+
           organizedContent.files.push({
-            id: file.id,
-            title: file.title,
-            alternateLink: file.alternateLink,
-            thumbnailUrl: file.thumbnailUrl,
+            id: file.id || "",
+            title: file.title || "",
+            alternateLink: file.alternateLink || "",
+            thumbnailUrl: file.thumbnailUrl || "",
             extension: extension,
             type: getFileType(extension),
           });

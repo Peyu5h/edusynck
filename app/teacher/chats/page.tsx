@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { io, Socket } from "socket.io-client";
 import {
   Card,
   CardContent,
@@ -26,6 +25,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useSelector } from "react-redux";
+import { subscribeToClassChat } from "~/lib/pusher-client";
 
 interface Message {
   id: string;
@@ -42,7 +42,6 @@ interface Class {
 
 export default function TeacherChatsPage() {
   const [messages, setMessages] = useState<any[]>([]);
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [videoMeetActive, setVideoMeetActive] = useState(false);
   const [micMuted, setMicMuted] = useState(false);
@@ -61,43 +60,47 @@ export default function TeacherChatsPage() {
     }
   }, [taughtClasses, selectedClass]);
 
+  // Fetch initial messages when component mounts or selected class changes
+  useEffect(() => {
+    async function fetchMessages() {
+      if (!selectedClass) return;
+
+      try {
+        setIsLoading(true);
+        const response = await axios.get<Message[]>(
+          `/api/chat/messages/${selectedClass}`,
+        );
+        setMessages(response.data);
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchMessages();
+  }, [selectedClass]);
+
+  // Subscribe to Pusher channel for real-time updates
   useEffect(() => {
     if (!selectedClass) return;
 
-    setIsLoading(true);
-    const newSocket = io(`${process.env.NEXT_PUBLIC_BACKEND_URL}`);
-    setSocket(newSocket);
+    // Subscribe to class chat events
+    const unsubscribe = subscribeToClassChat(
+      selectedClass,
+      (newMessage: Message) => {
+        console.log("Received new message:", newMessage);
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
+      },
+    );
 
-    newSocket.on("connect", () => {
-      console.log("Connected to server");
-      if (selectedClass && user?.id) {
-        newSocket.emit("join_room", { room: selectedClass, userId: user.id });
-
-        axios
-          .get<Message[]>(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/chat/messages/${selectedClass}`,
-          )
-          .then((response: AxiosResponse<Message[]>) => {
-            setMessages(response.data);
-            setIsLoading(false);
-          })
-          .catch((error) => {
-            console.error("Failed to fetch old messages:", error);
-            setIsLoading(false);
-          });
-      }
-    });
-
-    newSocket.on("receive_message", (message: Message) => {
-      console.log("Received message:", message);
-      setMessages((prevMessages) => [...prevMessages, message]);
-    });
-
+    // Cleanup subscription when component unmounts or selected class changes
     return () => {
-      newSocket.disconnect();
+      unsubscribe();
     };
-  }, [user?.id, selectedClass]);
+  }, [selectedClass]);
 
+  // Scroll to bottom when messages change
   useEffect(() => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop =
@@ -108,7 +111,6 @@ export default function TeacherChatsPage() {
   const sendMessage = async (message: string, files?: File[]) => {
     if (
       (message.trim() || (files && files.length > 0)) &&
-      socket &&
       selectedClass &&
       user?.id &&
       user?.name
@@ -118,7 +120,6 @@ export default function TeacherChatsPage() {
         content: message,
         sender: { id: user.id, name: user.name },
         files: [],
-        createdAt: new Date().toISOString(),
       };
 
       if (files && files.length > 0) {
@@ -147,8 +148,13 @@ export default function TeacherChatsPage() {
         messageData.files = uploadedFiles;
       }
 
-      console.log("Sending message:", JSON.stringify(messageData, null, 2));
-      socket.emit("send_message", messageData);
+      try {
+        // Send message using our API endpoint
+        await axios.post("/api/chat/send", messageData);
+        console.log("Message sent successfully");
+      } catch (error) {
+        console.error("Failed to send message:", error);
+      }
     }
   };
 

@@ -9,7 +9,7 @@ import ChatInput from "~/components/ChatPage/Attachement/ChatInput";
 import Messages from "~/components/ChatPage/Messages";
 import SubjectCardLoader from "~/components/Loaders/SubjectCardLoader";
 import ChatScreenLoader from "~/components/Loaders/ChatScreenLoader";
-import { subscribeToClassChat } from "~/app/utils/pusher-client";
+import { subscribeToClassChat } from "~/lib/pusher-client";
 
 interface Message {
   id: string;

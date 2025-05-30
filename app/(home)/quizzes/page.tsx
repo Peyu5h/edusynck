@@ -387,12 +387,14 @@ export default function StudentQuizzesPage() {
 
     if (filteredQuizzes.length === 0) {
       return (
-        <div className="flex h-40 flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-          <BookOpen className="mb-2 h-10 w-10 text-muted-foreground" />
-          <h3 className="text-lg font-medium">No active quizzes</h3>
-          <p className="text-sm text-muted-foreground">
-            There are no quizzes available for you right now.
-          </p>
+        <div>
+          <div className="flex h-40 flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+            <BookOpen className="mb-2 h-10 w-10 text-muted-foreground" />
+            <h3 className="text-lg font-medium">No active quizzes</h3>
+            <p className="text-sm text-muted-foreground">
+              There are no quizzes available for you right now.
+            </p>
+          </div>
         </div>
       );
     }

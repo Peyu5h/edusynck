@@ -1,13 +1,13 @@
 import { Context } from "hono";
 import { prisma } from "~/lib/prisma";
 import Pusher from "pusher";
-import { getChannelName } from "~/app/utils/pusher-client";
+import { getChannelName } from "~/lib/pusher-client";
 
 // Initialize Pusher with the provided credentials
 const pusher = new Pusher({
-  appId: "1956511",
-  key: "ebca36e63d3e34d99de9",
-  secret: "5af639e72e9696b3f595",
+  appId: process.env.PUSHER_APPID!,
+  key: process.env.PUSHER_KEY!,
+  secret: process.env.PUSHER_SECRET!,
   cluster: "ap2",
   useTLS: true,
 });
