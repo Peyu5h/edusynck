@@ -31,7 +31,28 @@ const SCOPES = [
   "https://www.googleapis.com/auth/classroom.rosters.readonly",
 ];
 
-const TOKEN_PATH = path.join(__dirname, "..", "config", "key.json");
+// Ensure config directory exists
+const CONFIG_DIR = path.join(__dirname, "..", "config");
+const TOKEN_PATH = path.join(CONFIG_DIR, "key.json");
+
+// Create a function to ensure the config directory exists
+function ensureConfigDirExists() {
+  try {
+    if (!fs.existsSync(CONFIG_DIR)) {
+      fs.mkdirSync(CONFIG_DIR, { recursive: true });
+      console.log(`Created config directory at: ${CONFIG_DIR}`);
+    }
+  } catch (error) {
+    console.error(`Failed to create config directory: ${error}`);
+    // Fall back to tmp directory if we can't create in the app directory
+    const tmpDir = path.join(process.cwd(), "tmp", "config");
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+    return tmpDir;
+  }
+  return CONFIG_DIR;
+}
 
 function getOAuth2Client() {
   return new google.auth.OAuth2(
@@ -59,10 +80,16 @@ export const oauth2callback = async (c: Context) => {
   }
 
   try {
+    // Ensure config directory exists before writing token
+    const configDir = ensureConfigDirExists();
+    const tokenPath = path.join(configDir, "key.json");
+
     const oAuth2Client = getOAuth2Client();
     const { tokens } = await oAuth2Client.getToken(code);
-    fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens));
+
+    fs.writeFileSync(tokenPath, JSON.stringify(tokens));
     oAuth2Client.setCredentials(tokens);
+
     return c.text("Done :)");
   } catch (error) {
     console.error("failed", error);
@@ -381,6 +408,81 @@ export const getYoutubeVideos = async (c: Context) => {
       {
         error: "Failed to fetch YouTube videos",
         message: error instanceof Error ? error.message : "Unknown error",
+      },
+      500,
+    );
+  }
+};
+
+export const debugFileSystem = async (c: Context) => {
+  try {
+    const configDir = ensureConfigDirExists();
+    const tokenPath = path.join(configDir, "key.json");
+
+    const debugInfo: {
+      cwd: string;
+      __dirname: string;
+      configDir: string;
+      tokenPath: string;
+      configDirExists: boolean;
+      tokenExists: boolean;
+      nodeEnv: string | undefined;
+      writable: boolean;
+      writeError?: string;
+      directories: {
+        cwd: string[];
+        configParent: string[];
+        cwdError?: string;
+        configParentError?: string;
+      };
+    } = {
+      cwd: process.cwd(),
+      __dirname,
+      configDir,
+      tokenPath,
+      configDirExists: fs.existsSync(configDir),
+      tokenExists: fs.existsSync(tokenPath),
+      nodeEnv: process.env.NODE_ENV,
+      writable: false,
+      directories: {
+        cwd: [],
+        configParent: [],
+      },
+    };
+
+    // Check if directories are writable
+    try {
+      const testFile = path.join(configDir, "test.txt");
+      fs.writeFileSync(testFile, "test");
+      fs.unlinkSync(testFile);
+      debugInfo.writable = true;
+    } catch (error) {
+      debugInfo.writeError =
+        error instanceof Error ? error.message : String(error);
+    }
+
+    // List contents of directories
+    try {
+      debugInfo.directories.cwd = fs.readdirSync(process.cwd());
+    } catch (error) {
+      debugInfo.directories.cwdError =
+        error instanceof Error ? error.message : String(error);
+    }
+
+    try {
+      const parentDir = path.dirname(configDir);
+      debugInfo.directories.configParent = fs.readdirSync(parentDir);
+    } catch (error) {
+      debugInfo.directories.configParentError =
+        error instanceof Error ? error.message : String(error);
+    }
+
+    return c.json(debugInfo);
+  } catch (error) {
+    return c.json(
+      {
+        error: "Debug failed",
+        message: error instanceof Error ? error.message : String(error),
       },
       500,
     );

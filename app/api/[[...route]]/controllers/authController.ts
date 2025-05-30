@@ -176,17 +176,50 @@ export const registerTeacher = async (c: Context) => {
 
 export const login = async (c: Context) => {
   try {
-    const body = await c.req.json();
-    const result = loginSchema.safeParse(body);
+    let email, password;
 
-    if (!result.success) {
-      return c.json(
-        { error: "Validation failed", message: result.error.message },
-        400,
-      );
+    // Handle both GET and POST methods
+    if (c.req.method === "GET") {
+      email = c.req.query("email");
+      password = c.req.query("password");
+
+      if (!email || !password) {
+        return c.json(
+          {
+            error: "Validation failed",
+            message: "Email and password are required",
+          },
+          400,
+        );
+      }
+    } else {
+      // For POST requests
+      try {
+        const body = await c.req.json();
+        const result = loginSchema.safeParse(body);
+
+        if (!result.success) {
+          return c.json(
+            { error: "Validation failed", message: result.error.message },
+            400,
+          );
+        }
+
+        email = result.data.email;
+        password = result.data.password;
+      } catch (e) {
+        // If JSON parsing fails, try to get from query params as fallback
+        email = c.req.query("email");
+        password = c.req.query("password");
+
+        if (!email || !password) {
+          return c.json(
+            { error: "Validation failed", message: "Invalid request format" },
+            400,
+          );
+        }
+      }
     }
-
-    const { email, password } = result.data;
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -322,8 +355,21 @@ export const getCurrentUser = async (c: Context) => {
 
 export const getUser = async (c: Context) => {
   try {
-    const body = await c.req.json();
-    const { userId } = body;
+    let userId;
+
+    // Handle both GET and POST methods
+    if (c.req.method === "GET") {
+      userId = c.req.query("userId");
+    } else {
+      // For POST requests
+      try {
+        const body = await c.req.json();
+        userId = body.userId;
+      } catch (e) {
+        // If JSON parsing fails, try to get from query params as fallback
+        userId = c.req.query("userId");
+      }
+    }
 
     if (!userId) {
       return c.json({ error: "User ID is required" }, 400);

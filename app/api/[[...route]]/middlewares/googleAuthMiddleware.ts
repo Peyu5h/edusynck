@@ -7,7 +7,28 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const TOKEN_PATH = path.join(__dirname, "..", "config", "key.json");
+// Ensure config directory exists
+const CONFIG_DIR = path.join(__dirname, "..", "config");
+const TOKEN_PATH = path.join(CONFIG_DIR, "key.json");
+
+// Create a function to ensure the config directory exists
+function ensureConfigDirExists() {
+  try {
+    if (!fs.existsSync(CONFIG_DIR)) {
+      fs.mkdirSync(CONFIG_DIR, { recursive: true });
+      console.log(`Created config directory at: ${CONFIG_DIR}`);
+    }
+  } catch (error) {
+    console.error(`Failed to create config directory: ${error}`);
+    // Fall back to tmp directory if we can't create in the app directory
+    const tmpDir = path.join(process.cwd(), "tmp", "config");
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+    return tmpDir;
+  }
+  return CONFIG_DIR;
+}
 
 function getOAuth2Client() {
   return new google.auth.OAuth2(
@@ -18,8 +39,12 @@ function getOAuth2Client() {
 }
 
 async function refreshAccessToken(oAuth2Client: Auth.OAuth2Client) {
-  if (fs.existsSync(TOKEN_PATH)) {
-    const tokens = JSON.parse(fs.readFileSync(TOKEN_PATH, "utf-8"));
+  // Ensure config directory exists before checking for token file
+  const configDir = ensureConfigDirExists();
+  const tokenPath = path.join(configDir, "key.json");
+
+  if (fs.existsSync(tokenPath)) {
+    const tokens = JSON.parse(fs.readFileSync(tokenPath, "utf-8"));
     oAuth2Client.setCredentials(tokens);
 
     try {
@@ -30,12 +55,16 @@ async function refreshAccessToken(oAuth2Client: Auth.OAuth2Client) {
       ) {
         const { credentials: newTokens } =
           await oAuth2Client.refreshAccessToken();
-        fs.writeFileSync(TOKEN_PATH, JSON.stringify(newTokens));
+        fs.writeFileSync(tokenPath, JSON.stringify(newTokens));
         oAuth2Client.setCredentials(newTokens);
       }
     } catch (error) {
       console.error("Unable to refresh access token:", error);
-      fs.unlinkSync(TOKEN_PATH);
+      try {
+        fs.unlinkSync(tokenPath);
+      } catch (unlinkErr) {
+        console.error("Failed to remove invalid token file:", unlinkErr);
+      }
       throw new Error("reauthorize");
     }
   } else {
