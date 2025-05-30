@@ -4,7 +4,7 @@ import { cors } from "hono/cors";
 
 import indexRoute from "./routes/index";
 
-export const maxDuration = 300;
+export const maxDuration = 59;
 
 const app = new Hono().basePath("/api");
 
