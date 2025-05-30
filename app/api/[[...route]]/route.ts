@@ -1,12 +1,9 @@
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
 import { cors } from "hono/cors";
+import indexRoute from "./routes";
 
-import indexRoute from "./routes/index";
-
-export const maxDuration = 59;
-
-const app = new Hono().basePath("/api");
+const app = new Hono();
 
 app.use(
   "*",
@@ -16,11 +13,10 @@ app.use(
     allowHeaders: ["Content-Type", "Authorization"],
     allowMethods: ["POST", "GET", "OPTIONS", "DELETE", "PUT"],
     exposeHeaders: ["Content-Length"],
-    maxAge: 86400,
   }),
 );
 
-const routes = app.route("/", indexRoute);
+const routes = app.route("/api", indexRoute);
 
 export type AppType = typeof routes;
 
