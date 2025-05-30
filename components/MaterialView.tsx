@@ -47,7 +47,19 @@ const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 const MaterialView: React.FC<{
   uri: string;
   fileType: string;
-}> = ({ uri, fileType }: { uri: string; fileType: string }) => {
+  materialName?: string;
+  courseId?: string;
+}> = ({
+  uri,
+  fileType,
+  materialName,
+  courseId,
+}: {
+  uri: string;
+  fileType: string;
+  materialName?: string;
+  courseId?: string;
+}) => {
   const [doc, setDoc] = useState<IDocument[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<IDocument | null>(null);
   const [extractedText, setExtractedText] = useState<string>("");
@@ -419,6 +431,126 @@ Search string:`;
       });
   };
 
+  // New component for displaying PYQs
+  const PreviousYearQuestions: React.FC<{
+    extractedText: string;
+    courseId?: string;
+  }> = ({ extractedText, courseId }) => {
+    const [pyqData, setPyqData] = useState<string[]>([]);
+    const [relevantPyq, setRelevantPyq] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const { toast } = useToast();
+    const genAI = useRef(
+      new GoogleGenerativeAI(
+        process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY as string,
+      ),
+    );
+
+    // Fetch PYQ data
+    useEffect(() => {
+      const fetchPyqData = async () => {
+        try {
+          const response = await fetch(`${backendUrl}/api/pyq`);
+          if (!response.ok) {
+            throw new Error("Failed to fetch PYQ data");
+          }
+          const data = await response.text();
+          const questions = data
+            .split("\n\n")
+            .filter((q) => q.trim().length > 0);
+          setPyqData(questions);
+          setIsLoading(false);
+        } catch (error) {
+          console.error("Error fetching PYQ data:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load previous year questions",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+        }
+      };
+
+      fetchPyqData();
+    }, [toast]);
+
+    // Find relevant PYQs based on document content
+    useEffect(() => {
+      const findRelevantQuestions = async () => {
+        if (!extractedText || pyqData.length === 0) return;
+
+        setIsLoading(true);
+        try {
+          const model = genAI.current.getGenerativeModel({
+            model: "gemini-1.5-flash-latest",
+          });
+
+          const prompt = `
+I have a document with the following content:
+${extractedText.substring(0, 2000)}...
+
+And I have a list of previous year exam questions. Please identify the question numbers (1-indexed) from the list that are most relevant to the document content (return only up to 5 most relevant questions):
+
+${pyqData.map((q, i) => `${i + 1}. ${q}`).join("\n")}
+
+Return only the numbers of relevant questions, separated by commas (e.g., "1,4,7"):
+`;
+
+          const result = await model.generateContent(prompt);
+          const relevantIndices = result.response
+            .text()
+            .split(",")
+            .map((num) => parseInt(num.trim(), 10) - 1)
+            .filter((num) => !isNaN(num) && num >= 0 && num < pyqData.length);
+
+          setRelevantPyq(relevantIndices.map((i) => pyqData[i]));
+        } catch (error) {
+          console.error("Error finding relevant PYQs:", error);
+          // If AI fails, show a random selection of questions
+          const randomIndices = Array.from(
+            { length: Math.min(5, pyqData.length) },
+            () => Math.floor(Math.random() * pyqData.length),
+          );
+          setRelevantPyq(randomIndices.map((i) => pyqData[i]));
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      findRelevantQuestions();
+    }, [extractedText, pyqData]);
+
+    return (
+      <div className="h-full overflow-y-auto p-4">
+        <h2 className="mb-4 text-xl font-semibold">
+          Related Previous Year Questions
+        </h2>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+            <span>Finding relevant questions...</span>
+          </div>
+        ) : relevantPyq.length > 0 ? (
+          <div className="space-y-4">
+            {relevantPyq.map((question, index) => (
+              <div
+                key={index}
+                className="rounded-lg border border-gray-200 bg-bground2 p-4 shadow-sm"
+              >
+                <p className="text-foreground">{question}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center py-8 text-gray-500">
+            <p>No relevant questions found. Try with a different document.</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="flex h-[76vh] w-full flex-col gap-y-4 overflow-y-hidden md:flex-row md:gap-x-4 md:gap-y-0">
       <div
@@ -467,7 +599,7 @@ Search string:`;
           defaultValue="chat"
           className="flex h-full w-full flex-col p-4 pt-0"
         >
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="chat">Chat</TabsTrigger>
             <TabsTrigger value="examNotes" disabled={!extractedText}>
               Make Notes
@@ -477,6 +609,9 @@ Search string:`;
             </TabsTrigger>
             <TabsTrigger value="quizMe" disabled={!extractedText}>
               Quiz Me
+            </TabsTrigger>
+            <TabsTrigger value="pyq" disabled={!extractedText}>
+              Previous Year Q
             </TabsTrigger>
           </TabsList>
           <TabsContent value="chat" className="flex-grow overflow-hidden">
@@ -597,7 +732,26 @@ Search string:`;
           >
             <div className="scrollbar flex h-full flex-col">
               <div className="scrollbar flex-grow overflow-y-auto">
-                <QuizMe extractedText={extractedText} />
+                <QuizMe
+                  extractedText={extractedText}
+                  materialName={materialName}
+                  courseId={courseId}
+                />
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* New Tab for Previous Year Questions */}
+          <TabsContent
+            value="pyq"
+            className="scrollbar flex-grow overflow-hidden"
+          >
+            <div className="scrollbar flex h-full flex-col">
+              <div className="scrollbar flex-grow overflow-y-auto">
+                <PreviousYearQuestions
+                  extractedText={extractedText}
+                  courseId={courseId}
+                />
               </div>
             </div>
           </TabsContent>

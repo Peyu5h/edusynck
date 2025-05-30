@@ -28,6 +28,20 @@ export const useLogin = () => {
         throw new Error(data.error || "Something went wrong");
       }
 
+      // Update the user's activity streak
+      try {
+        await fetch(`${backendUrl}/api/user/streak/${data.user.id}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${data.token}`,
+          },
+        });
+      } catch (streakError) {
+        console.error("Error updating streak:", streakError);
+        // Continue with login even if streak update fails
+      }
+
       setCookie("token", data.token, { path: "/" });
       setCookie("user", JSON.stringify(data.user), { path: "/" });
       localStorage.setItem("user", JSON.stringify(data.user));
@@ -41,9 +55,6 @@ export const useLogin = () => {
         variant: "destructive",
         description: errorMessage,
       });
-    },
-    onSuccess: () => {
-      router.push("/");
     },
   });
 };

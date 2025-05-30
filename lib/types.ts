@@ -9,6 +9,20 @@ export interface User {
   assignments?: any[];
   votedPolls?: any[];
   createdPolls?: any[];
+  streak?: {
+    currentStreak: number;
+    longestStreak: number;
+    lastActiveDate: string;
+    activityLog: Array<{
+      date: string;
+      count: number;
+    }>;
+  };
+}
+
+export interface UserActivity {
+  date: string;
+  count: number;
 }
 
 export interface Message {

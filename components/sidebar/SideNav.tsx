@@ -101,7 +101,7 @@ export default function SideNav() {
           <div className="relative mt-4 pb-2">
             <div className="my-4 mb-6 flex items-center justify-center">
               {isSidebarExpanded ? (
-                <h1 className="font-robson text-5xl text-pri">ACADEMIA</h1>
+                <h1 className="font-robson text-5xl text-pri">EDUSYNC</h1>
               ) : (
                 <h1 className="font-robson text-5xl text-pri">A</h1>
               )}
@@ -268,7 +268,7 @@ export const SideNavItem: React.FC<{
       {isSidebarExpanded ? (
         <Link
           href={path}
-          className={`text-md relative flex h-full items-center whitespace-nowrap rounded-xl py-2 ${
+          className={`relative flex h-full items-center whitespace-nowrap rounded-xl py-2 text-sm ${
             active
               ? "font-base bg-bground3 text-text shadow-sm"
               : `text-thintext hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800`
@@ -334,13 +334,13 @@ export const SideSubjectitems: React.FC<{
         }`}
         onClick={onClick}
       >
-        <div className="font-base relative flex flex-row items-center space-x-2 rounded-md px-2 py-1.5 text-sm duration-100">
+        <div className="font-base relative flex flex-row items-center space-x-2 rounded-md px-2 py-1 text-sm duration-100">
           {icon}
           <Minus
             className={`mb-1 ${isClassroom && active ? "" : "opacity-0"}`}
             size={12}
           />
-          <span className="text-[16px]">{label}</span>
+          <span className="text-sm">{label}</span>
         </div>
       </Link>
     </>

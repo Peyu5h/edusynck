@@ -4,6 +4,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Checkbox } from "./ui/checkbox";
 import { Loader2 } from "lucide-react";
 import Confetti from "react-confetti";
+import { useSelector } from "react-redux";
+import axios from "axios";
+import { toast } from "~/components/ui/use-toast";
 
 interface Question {
   question: string;
@@ -11,7 +14,20 @@ interface Question {
   correctAnswer: number;
 }
 
-const QuizMe: React.FC<{ extractedText: string }> = ({ extractedText }) => {
+interface WrongAnswer {
+  question: string;
+  userAnswer: string;
+  correctAnswer: string;
+  materialName: string;
+  courseName: string;
+  timestamp: string;
+}
+
+const QuizMe: React.FC<{
+  extractedText: string;
+  materialName?: string;
+  courseId?: string;
+}> = ({ extractedText, materialName = "Unnamed Material", courseId }) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [userAnswers, setUserAnswers] = useState<number[]>([]);
   const [score, setScore] = useState<number | null>(null);
@@ -19,7 +35,27 @@ const QuizMe: React.FC<{ extractedText: string }> = ({ extractedText }) => {
   const [error, setError] = useState<string | null>(null);
   const [showAnswers, setShowAnswers] = useState(false);
   const [allCorrect, setAllCorrect] = useState(false);
+  const [wrongAnswers, setWrongAnswers] = useState<WrongAnswer[]>([]);
+  const [isSavingAnswers, setIsSavingAnswers] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  const user = useSelector((state: any) => state.user.user);
+  const courses = useSelector((state: any) => {
+    if (state.user.user?.classes) {
+      return state.user.user.classes.flatMap((cls: any) => cls.courses || []);
+    }
+    if (state.user.user?.taughtClasses) {
+      return state.user.user.taughtClasses.flatMap(
+        (cls: any) => cls.courses || [],
+      );
+    }
+    return [];
+  });
+
+  console.log("User:", user);
+
+  const currentCourse = courses.find((course: any) => course.id === courseId);
+  const courseName = currentCourse?.name || "Unknown Course";
 
   const genAI = new GoogleGenerativeAI(
     process.env.NEXT_PUBLIC_GOOGLE_AI_API_KEY as string,
@@ -35,6 +71,7 @@ const QuizMe: React.FC<{ extractedText: string }> = ({ extractedText }) => {
     setScore(null);
     setUserAnswers([]);
     setQuestions([]);
+    setWrongAnswers([]);
 
     try {
       const model = genAI.getGenerativeModel({
@@ -93,19 +130,103 @@ const QuizMe: React.FC<{ extractedText: string }> = ({ extractedText }) => {
 
   const calculateScore = () => {
     let correctAnswers = 0;
+    const newWrongAnswers: WrongAnswer[] = [];
+
     questions.forEach((question, index) => {
-      if (userAnswers[index] === question.correctAnswer) {
+      const userAnswerIndex = userAnswers[index];
+
+      if (userAnswerIndex === question.correctAnswer) {
         correctAnswers++;
+      } else if (userAnswerIndex !== undefined) {
+        // Only add to wrong answers if user actually selected an answer
+        newWrongAnswers.push({
+          question: question.question,
+          userAnswer: question.options[userAnswerIndex],
+          correctAnswer: question.options[question.correctAnswer],
+          materialName,
+          courseName,
+          timestamp: new Date().toISOString(),
+        });
       }
     });
+
     setScore(correctAnswers);
     setShowAnswers(true);
     setAllCorrect(correctAnswers === questions.length);
+    setWrongAnswers(newWrongAnswers);
+
+    // Save wrong answers
+    if (newWrongAnswers.length > 0 && user?.id) {
+      saveWrongAnswers(newWrongAnswers);
+    }
 
     // Scroll to results
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
+  };
+
+  const saveWrongAnswers = async (wrongAnswers: WrongAnswer[]) => {
+    if (!user?.id) return;
+
+    setIsSavingAnswers(true);
+    try {
+      console.log("Saving analytics with:", {
+        materialName,
+        courseId,
+        courseName,
+        userId: user.id,
+        wrongAnswersCount: wrongAnswers.length,
+      });
+
+      // Call the API endpoint to save wrong answers
+      await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/analytics/wrong-answers`,
+        {
+          userId: user.id,
+          wrongAnswers,
+        },
+      );
+
+      toast({
+        title: "Analytics saved",
+        description: "Your results have been saved for personalized learning.",
+      });
+    } catch (error) {
+      console.error("Error saving wrong answers:", error);
+
+      // Save to localStorage as backup if API fails
+      try {
+        const existingData = localStorage.getItem("wrongAnswers")
+          ? JSON.parse(localStorage.getItem("wrongAnswers") || "[]")
+          : [];
+
+        const updatedData = [
+          ...existingData,
+          ...wrongAnswers.map((answer) => ({
+            ...answer,
+            userId: user.id,
+            savedLocally: true,
+          })),
+        ];
+
+        localStorage.setItem("wrongAnswers", JSON.stringify(updatedData));
+
+        toast({
+          title: "Analytics saved locally",
+          description:
+            "Network error occurred but your results were saved locally.",
+        });
+      } catch (localError) {
+        toast({
+          title: "Error saving analytics",
+          description: "Failed to save your results. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsSavingAnswers(false);
+    }
   };
 
   const getOptionClassName = (qIndex: number, oIndex: number) => {
@@ -165,8 +286,18 @@ const QuizMe: React.FC<{ extractedText: string }> = ({ extractedText }) => {
             <Button
               className="bg-orange font-medium text-white hover:bg-orange"
               onClick={calculateScore}
+              disabled={isSavingAnswers}
             >
-              {showAnswers ? "Recalculate Score" : "Submit Answers"}
+              {isSavingAnswers ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : showAnswers ? (
+                "Recalculate Score"
+              ) : (
+                "Submit Answers"
+              )}
             </Button>
 
             <Button
@@ -174,6 +305,7 @@ const QuizMe: React.FC<{ extractedText: string }> = ({ extractedText }) => {
               onClick={() => {
                 setShowAnswers(false);
                 setUserAnswers([]);
+                setWrongAnswers([]);
                 generateQuiz();
               }}
             >
@@ -191,6 +323,32 @@ const QuizMe: React.FC<{ extractedText: string }> = ({ extractedText }) => {
           <p className="text-lg font-bold">
             Your Score: {score} / {questions.length}
           </p>
+
+          {wrongAnswers.length > 0 && (
+            <div className="mt-4">
+              <p className="font-semibold text-red">Mistakes to review:</p>
+              <ul className="mt-2 space-y-2">
+                {wrongAnswers.map((wrong, index) => (
+                  <li key={index} className="text-sm">
+                    <p>
+                      <span className="font-medium">Question:</span>{" "}
+                      {wrong.question}
+                    </p>
+                    <p>
+                      <span className="font-medium text-red">Your answer:</span>{" "}
+                      {wrong.userAnswer}
+                    </p>
+                    <p>
+                      <span className="font-medium text-green">
+                        Correct answer:
+                      </span>{" "}
+                      {wrong.correctAnswer}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
       {allCorrect && <Confetti />}

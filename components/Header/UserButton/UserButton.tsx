@@ -56,7 +56,7 @@ const UserButton: React.FC<UserButtonProps> = ({ className, user }) => {
       <DropdownMenuContent>
         <DropdownMenuLabel>Logged in as @{user?.name}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <Link href={`/users/${user?.name}`}>
+        <Link href={`/user/${user?.id}`}>
           <DropdownMenuItem>
             <UserIcon className="mr-2 size-4" />
             Profile

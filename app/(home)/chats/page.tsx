@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { io, Socket } from "socket.io-client";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "~/components/ui/card";
+import { Card, CardContent, CardFooter } from "~/components/ui/card";
 import { useUser } from "~/hooks/useUser";
 import axios from "axios";
 import { AxiosResponse } from "axios";
@@ -15,6 +9,7 @@ import ChatInput from "~/components/ChatPage/Attachement/ChatInput";
 import Messages from "~/components/ChatPage/Messages";
 import SubjectCardLoader from "~/components/Loaders/SubjectCardLoader";
 import ChatScreenLoader from "~/components/Loaders/ChatScreenLoader";
+import { subscribeToClassChat } from "~/lib/pusher-client";
 
 interface Message {
   id: string;
@@ -26,45 +21,51 @@ interface Message {
 
 export default function ChatsPage() {
   const [messages, setMessages] = useState<any[]>([]);
-  const [socket, setSocket] = useState<Socket | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch initial messages when component mounts or user changes
   useEffect(() => {
-    const newSocket = io(`${process.env.NEXT_PUBLIC_BACKEND_URL}`);
-    setSocket(newSocket);
+    async function fetchMessages() {
+      if (!user?.classId) return;
 
-    newSocket.on("connect", () => {
-      console.log("Connected to server");
-      if (user?.classId) {
-        newSocket.emit("join_room", { room: user.classId, userId: user.id });
-
-        axios
-          .get<Message[]>(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/chat/messages/${user.classId}`,
-          )
-          .then((response: AxiosResponse<Message[]>) => {
-            setMessages(response.data);
-            setIsLoading(false);
-          })
-          .catch((error) => {
-            console.error("Failed to fetch old messages:", error);
-            setIsLoading(false);
-          });
+      try {
+        setIsLoading(true);
+        const response = await axios.get<Message[]>(
+          `/api/chat/messages/${user.classId}`,
+        );
+        setMessages(response.data);
+      } catch (error) {
+        console.error("Failed to fetch messages:", error);
+      } finally {
+        setIsLoading(false);
       }
-    });
+    }
 
-    newSocket.on("receive_message", (message: Message) => {
-      console.log("Received message:", message);
-      setMessages((prevMessages) => [...prevMessages, message]);
-    });
+    fetchMessages();
+  }, [user?.classId]);
 
+  // Subscribe to Pusher channel for real-time updates
+  useEffect(() => {
+    if (!user?.classId) return;
+
+    // Subscribe to class chat events
+    const unsubscribe = subscribeToClassChat(
+      user.classId,
+      (newMessage: Message) => {
+        console.log("Received new message:", newMessage);
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
+      },
+    );
+
+    // Cleanup subscription when component unmounts
     return () => {
-      newSocket.disconnect();
+      unsubscribe();
     };
-  }, [user?.classId, user?.id]);
+  }, [user?.classId]);
 
+  // Scroll to bottom when messages change
   useEffect(() => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop =
@@ -75,7 +76,6 @@ export default function ChatsPage() {
   const sendMessage = async (message: string, files?: File[]) => {
     if (
       (message.trim() || (files && files.length > 0)) &&
-      socket &&
       user?.classId &&
       user?.id &&
       user?.name
@@ -85,9 +85,9 @@ export default function ChatsPage() {
         content: message,
         sender: { id: user.id, name: user.name },
         files: [],
-        createdAt: new Date().toISOString(),
       };
 
+      // Process file uploads if any (maintain existing functionality)
       if (files && files.length > 0) {
         const uploadedFiles = await Promise.all(
           files.map(async (file) => {
@@ -114,8 +114,13 @@ export default function ChatsPage() {
         messageData.files = uploadedFiles;
       }
 
-      console.log("Sending message:", JSON.stringify(messageData, null, 2));
-      socket.emit("send_message", messageData);
+      try {
+        // Send message using our new API endpoint
+        await axios.post("/api/chat/send", messageData);
+        console.log("Message sent successfully");
+      } catch (error) {
+        console.error("Failed to send message:", error);
+      }
     }
   };
 

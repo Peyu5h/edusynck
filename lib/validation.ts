@@ -15,3 +15,12 @@ export const loginSchema = yup.object().shape({
 });
 
 export type LoginValues = yup.InferType<typeof loginSchema>;
+
+export const teacherRegisterSchema = yup.object().shape({
+  name: yup.string().required("Name is required"),
+  email: yup.string().email("Enter a valid email"),
+  password: yup.string().min(6, "Password must be at least 6 characters"),
+  classNumber: yup.string().required("Class is required"),
+});
+
+export type TeacherRegisterValues = yup.InferType<typeof teacherRegisterSchema>;
