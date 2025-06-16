@@ -25,6 +25,10 @@ app.use("*", async (c, next) => {
       {
         error: "Internal server error",
         message: err instanceof Error ? err.message : "Unknown error occurred",
+        stack:
+          process.env.NODE_ENV === "development" && err instanceof Error
+            ? err.stack
+            : undefined,
       },
       500,
     );
@@ -34,8 +38,21 @@ app.use("*", async (c, next) => {
 // Apply CORS middleware
 app.use("*", corsMiddleware);
 
-// Mount API routes
+// Mount API routes at /api
 app.route("/api", indexRoute);
+
+// Add a fallback for Vercel serverless environment to catch misrouted requests
+app.all("*", (c) => {
+  return c.json(
+    {
+      error: "Not Found",
+      message: `Route ${c.req.path} not found`,
+      availableAt: "/api/*",
+      timestamp: new Date().toISOString(),
+    },
+    404,
+  );
+});
 
 // Export Next.js API route handlers
 export const GET = handle(app);

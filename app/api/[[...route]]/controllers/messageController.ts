@@ -115,20 +115,50 @@ export const sendMessage = async (c: Context) => {
 
 export const pusherAuth = async (c: Context) => {
   try {
-    const formData = await c.req.formData();
-    const socketId = formData.get("socket_id")?.toString();
-    const channel = formData.get("channel_name")?.toString();
+    console.log("Pusher auth endpoint hit");
+
+    // Try form data first
+    let socketId, channel;
+
+    try {
+      const formData = await c.req.formData();
+      socketId = formData.get("socket_id")?.toString();
+      channel = formData.get("channel_name")?.toString();
+      console.log("Form data parsed:", { socketId, channel });
+    } catch (formErr) {
+      console.log("Failed to parse form data, trying JSON:", formErr);
+
+      // Try JSON if form data fails
+      try {
+        const body = await c.req.json();
+        socketId = body.socket_id;
+        channel = body.channel_name;
+        console.log("JSON data parsed:", { socketId, channel });
+      } catch (jsonErr) {
+        console.log("Failed to parse JSON, trying query params:", jsonErr);
+
+        // Last resort: query params
+        socketId = c.req.query("socket_id");
+        channel = c.req.query("channel_name");
+        console.log("Query params parsed:", { socketId, channel });
+      }
+    }
 
     if (!socketId || !channel) {
+      console.error("Socket ID or channel name missing");
       return c.json(
         { message: "Socket ID and channel name are required" },
         400,
       );
     }
 
-    // If using presence channels, you would add user info here
+    // Set proper CORS headers for Pusher
+    c.header("Access-Control-Allow-Origin", "*");
+    c.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
     // For basic private channels, this is sufficient
     const auth = pusher.authorizeChannel(socketId, channel);
+    console.log("Auth successful:", auth);
 
     return c.json(auth);
   } catch (error) {
