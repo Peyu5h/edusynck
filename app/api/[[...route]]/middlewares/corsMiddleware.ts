@@ -1,8 +1,8 @@
 import { Context, Next } from "hono";
 
-// Custom CORS middleware for serverless environments
+// Enhanced CORS middleware for serverless environments
 export const corsMiddleware = async (c: Context, next: Next) => {
-  // Access control headers for regular requests
+  // Always set CORS headers regardless of method
   c.header("Access-Control-Allow-Origin", "*");
   c.header(
     "Access-Control-Allow-Methods",
@@ -14,10 +14,10 @@ export const corsMiddleware = async (c: Context, next: Next) => {
   );
   c.header("Access-Control-Max-Age", "86400"); // 24 hours
 
-  // Handle preflight OPTIONS requests immediately
+  // Handle OPTIONS requests immediately
   if (c.req.method === "OPTIONS") {
     return new Response(null, {
-      status: 204,
+      status: 204, // No content for preflight
       headers: {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods":
@@ -30,4 +30,7 @@ export const corsMiddleware = async (c: Context, next: Next) => {
   }
 
   await next();
+
+  // Ensure CORS headers are present on the response as well
+  c.header("Access-Control-Allow-Origin", "*");
 };

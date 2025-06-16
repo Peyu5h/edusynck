@@ -7,20 +7,21 @@ import quizRoutes from "./quizRoute";
 import analyticsRoutes from "./analyticsRoute";
 import messageRoutes from "./messageRoute";
 
-const indexRoute = new Hono();
+const app = new Hono();
 
-// test route
-indexRoute.get("/", (c) => {
-  return c.json({ message: "working" });
+// Basic API test route
+app.get("/ping", (c) => {
+  return c.json({ message: "pong", time: new Date().toISOString() });
 });
 
-// routes
-indexRoute.route("/user", userRoutes);
-indexRoute.route("/auth", authRoutes);
-indexRoute.route("/admin", adminRoutes);
-indexRoute.route("/class", classRoutes);
-indexRoute.route("/quiz", quizRoutes);
-indexRoute.route("/analytics", analyticsRoutes);
-indexRoute.route("/chat", messageRoutes);
+// Mount all subroutes
+app.route("/user", userRoutes);
+app.route("/auth", authRoutes);
+app.route("/admin", adminRoutes);
+app.route("/class", classRoutes);
+app.route("/quiz", quizRoutes);
+app.route("/analytics", analyticsRoutes);
+app.route("/chat", messageRoutes);
 
-export default indexRoute;
+// Export combined routes
+export default app;
