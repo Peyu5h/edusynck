@@ -1,37 +1,13 @@
 import { Context, Next } from "hono";
 import { google, Auth } from "googleapis";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 
-// Load the token from the committed key.json file if it exists
+// Load the token from memory cache instead of filesystem
 export let cachedTokens: any = null;
 
 // Function to update the cached tokens
 export function updateCachedTokens(tokens: any) {
   cachedTokens = tokens;
   console.log("Cached tokens updated successfully");
-}
-
-// Try to read from the key.json file if it exists at build time
-try {
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
-  const CONFIG_DIR = path.join(__dirname, "..", "config");
-  const TOKEN_PATH = path.join(CONFIG_DIR, "key.json");
-
-  if (fs.existsSync(TOKEN_PATH)) {
-    try {
-      cachedTokens = JSON.parse(fs.readFileSync(TOKEN_PATH, "utf-8"));
-      console.log("Loaded auth tokens from key.json");
-    } catch (parseError) {
-      console.error("Error parsing tokens from key.json:", parseError);
-    }
-  } else {
-    console.log("No key.json file found at path:", TOKEN_PATH);
-  }
-} catch (error) {
-  console.warn("Could not load tokens from file system:", error);
 }
 
 function getOAuth2Client() {
@@ -52,7 +28,7 @@ function getOAuth2Client() {
 }
 
 async function refreshAccessToken(oAuth2Client: Auth.OAuth2Client) {
-  // Use the cached tokens from the startup read
+  // Use the cached tokens from memory
   if (cachedTokens) {
     console.log("Using cached tokens...");
     oAuth2Client.setCredentials(cachedTokens);

@@ -9,14 +9,19 @@ import {
 
 const authRoutes = new Hono();
 
+// User registration
 authRoutes.post("/register", register);
 authRoutes.post("/register-teacher", registerTeacher);
+
+// Login routes - support both GET and POST
 authRoutes.post("/login", login);
 authRoutes.get("/login", login);
 
-authRoutes.post("/getUser", getUser);
+// User info routes - support both GET and POST
 authRoutes.get("/getUser", getUser);
+authRoutes.post("/getUser", getUser);
 
+// Current user routes
 authRoutes.get("/current-user", getCurrentUser);
 authRoutes.post("/current-user", getCurrentUser);
 

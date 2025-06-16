@@ -9,6 +9,12 @@ interface JwtPayload {
 
 export const jwtMiddleware = async (c: Context, next: Next) => {
   try {
+    // Allow OPTIONS requests to pass through for CORS pre-flight
+    if (c.req.method === "OPTIONS") {
+      await next();
+      return;
+    }
+
     const authHeader = c.req.header("Authorization");
 
     if (!authHeader?.startsWith("Bearer ")) {
@@ -28,6 +34,14 @@ export const jwtMiddleware = async (c: Context, next: Next) => {
       await next();
     } catch (err) {
       console.error("JWT verification failed:", err);
+
+      // Be more specific about token errors
+      if (err instanceof jwt.TokenExpiredError) {
+        return c.json({ error: "Token expired" }, 401);
+      } else if (err instanceof jwt.JsonWebTokenError) {
+        return c.json({ error: "Invalid token" }, 401);
+      }
+
       return c.json({ error: "Invalid token" }, 401);
     }
   } catch (error) {

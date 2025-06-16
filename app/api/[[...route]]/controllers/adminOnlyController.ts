@@ -1,12 +1,10 @@
 import { Context } from "hono";
 import { google } from "googleapis";
-import fs from "fs";
-import path, { extname } from "path";
-import { fileURLToPath } from "url";
 import fetch from "node-fetch";
 import NodeCache from "node-cache";
 import { prisma } from "~/lib/prisma";
 import { getTextExtractor } from "office-text-extractor";
+import { extname } from "path";
 import {
   formatDueDate,
   getFileType,
@@ -18,9 +16,6 @@ import {
 } from "../utils/functions";
 import { updateCachedTokens } from "../middlewares/googleAuthMiddleware";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const SCOPES = [
   "https://www.googleapis.com/auth/classroom.courses.readonly",
   "https://www.googleapis.com/auth/classroom.coursework.me",
@@ -31,29 +26,6 @@ const SCOPES = [
   "https://www.googleapis.com/auth/classroom.profile.photos",
   "https://www.googleapis.com/auth/classroom.rosters.readonly",
 ];
-
-// Ensure config directory exists
-const CONFIG_DIR = path.join(__dirname, "..", "config");
-const TOKEN_PATH = path.join(CONFIG_DIR, "key.json");
-
-// Create a function to ensure the config directory exists
-function ensureConfigDirExists() {
-  try {
-    if (!fs.existsSync(CONFIG_DIR)) {
-      fs.mkdirSync(CONFIG_DIR, { recursive: true });
-      console.log(`Created config directory at: ${CONFIG_DIR}`);
-    }
-  } catch (error) {
-    console.error(`Failed to create config directory: ${error}`);
-    // Fall back to tmp directory if we can't create in the app directory
-    const tmpDir = path.join(process.cwd(), "tmp", "config");
-    if (!fs.existsSync(tmpDir)) {
-      fs.mkdirSync(tmpDir, { recursive: true });
-    }
-    return tmpDir;
-  }
-  return CONFIG_DIR;
-}
 
 function getOAuth2Client() {
   return new google.auth.OAuth2(
@@ -114,18 +86,6 @@ export const oauth2callback = async (c: Context) => {
 
     // Update cached tokens using the exported function
     updateCachedTokens(tokens);
-
-    // Only attempt to write to filesystem in non-production environments
-    if (process.env.NODE_ENV !== "production") {
-      try {
-        // Ensure config directory exists before writing token
-        const configDir = ensureConfigDirExists();
-        const tokenPath = path.join(configDir, "key.json");
-        fs.writeFileSync(tokenPath, JSON.stringify(tokens));
-      } catch (fsError) {
-        console.warn("Could not write token to filesystem:", fsError);
-      }
-    }
 
     oAuth2Client.setCredentials(tokens);
 
@@ -370,7 +330,21 @@ export const extractTextFromPptxUrl = async (c: Context) => {
 
 export const getYoutubeVideos = async (c: Context) => {
   try {
-    const { keywords } = await c.req.json();
+    let keywords;
+
+    // Handle both GET and POST methods
+    if (c.req.method === "GET") {
+      keywords = c.req.query("keywords");
+    } else {
+      // For POST requests
+      try {
+        const body = await c.req.json();
+        keywords = body.keywords;
+      } catch (e) {
+        // Fallback to query parameters if JSON parsing fails
+        keywords = c.req.query("keywords");
+      }
+    }
 
     if (!keywords || typeof keywords !== "string") {
       return c.json({ error: "Keywords are required" }, 400);
@@ -454,76 +428,10 @@ export const getYoutubeVideos = async (c: Context) => {
 };
 
 export const debugFileSystem = async (c: Context) => {
-  try {
-    const configDir = ensureConfigDirExists();
-    const tokenPath = path.join(configDir, "key.json");
-
-    const debugInfo: {
-      cwd: string;
-      __dirname: string;
-      configDir: string;
-      tokenPath: string;
-      configDirExists: boolean;
-      tokenExists: boolean;
-      nodeEnv: string | undefined;
-      writable: boolean;
-      writeError?: string;
-      directories: {
-        cwd: string[];
-        configParent: string[];
-        cwdError?: string;
-        configParentError?: string;
-      };
-    } = {
-      cwd: process.cwd(),
-      __dirname,
-      configDir,
-      tokenPath,
-      configDirExists: fs.existsSync(configDir),
-      tokenExists: fs.existsSync(tokenPath),
-      nodeEnv: process.env.NODE_ENV,
-      writable: false,
-      directories: {
-        cwd: [],
-        configParent: [],
-      },
-    };
-
-    // Check if directories are writable
-    try {
-      const testFile = path.join(configDir, "test.txt");
-      fs.writeFileSync(testFile, "test");
-      fs.unlinkSync(testFile);
-      debugInfo.writable = true;
-    } catch (error) {
-      debugInfo.writeError =
-        error instanceof Error ? error.message : String(error);
-    }
-
-    // List contents of directories
-    try {
-      debugInfo.directories.cwd = fs.readdirSync(process.cwd());
-    } catch (error) {
-      debugInfo.directories.cwdError =
-        error instanceof Error ? error.message : String(error);
-    }
-
-    try {
-      const parentDir = path.dirname(configDir);
-      debugInfo.directories.configParent = fs.readdirSync(parentDir);
-    } catch (error) {
-      debugInfo.directories.configParentError =
-        error instanceof Error ? error.message : String(error);
-    }
-
-    return c.json(debugInfo);
-  } catch (error) {
-    return c.json(
-      {
-        error: "Debug failed",
-        message: error instanceof Error ? error.message : String(error),
-      },
-      500,
-    );
-  }
+  // Simple debug endpoint that doesn't depend on file system
+  return c.json({
+    serverless: true,
+    environment: process.env.NODE_ENV,
+    now: new Date().toISOString(),
+  });
 };
