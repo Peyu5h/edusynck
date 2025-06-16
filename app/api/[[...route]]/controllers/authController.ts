@@ -176,12 +176,19 @@ export const registerTeacher = async (c: Context) => {
 
 export const login = async (c: Context) => {
   try {
+    console.log(`Login request received via ${c.req.method}`);
+
     let email, password;
 
     // Handle both GET and POST methods
     if (c.req.method === "GET") {
       email = c.req.query("email");
       password = c.req.query("password");
+
+      console.log("GET login params:", {
+        email: email ? "provided" : "missing",
+        password: password ? "provided" : "missing",
+      });
 
       if (!email || !password) {
         return c.json(
@@ -196,9 +203,12 @@ export const login = async (c: Context) => {
       // For POST requests
       try {
         const body = await c.req.json();
+        console.log("POST login body received");
+
         const result = loginSchema.safeParse(body);
 
         if (!result.success) {
+          console.log("Login validation failed:", result.error.message);
           return c.json(
             { error: "Validation failed", message: result.error.message },
             400,
@@ -208,9 +218,16 @@ export const login = async (c: Context) => {
         email = result.data.email;
         password = result.data.password;
       } catch (e) {
+        console.error("Error parsing login request:", e);
+
         // If JSON parsing fails, try to get from query params as fallback
         email = c.req.query("email");
         password = c.req.query("password");
+
+        console.log("Fallback to query params:", {
+          email: email ? "provided" : "missing",
+          password: password ? "provided" : "missing",
+        });
 
         if (!email || !password) {
           return c.json(
@@ -220,6 +237,9 @@ export const login = async (c: Context) => {
         }
       }
     }
+
+    // Debug log to see if we got this far with valid credentials
+    console.log(`Attempting to authenticate: ${email}`);
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -243,13 +263,17 @@ export const login = async (c: Context) => {
     });
 
     if (!user) {
+      console.log(`Login failed: User with email ${email} not found`);
       return c.json({ error: "Invalid email or password" }, 400);
     }
 
     const passwordValid = await bcrypt.compare(password, user.password);
     if (!passwordValid) {
+      console.log(`Login failed: Invalid password for user ${email}`);
       return c.json({ error: "Invalid email or password" }, 400);
     }
+
+    console.log(`Login successful for user ${email}`);
 
     const { password: _, ...userWithoutPassword } = user;
 

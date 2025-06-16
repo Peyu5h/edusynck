@@ -64,13 +64,41 @@ function getOAuth2Client() {
 }
 
 export const auth = async (c: Context) => {
-  const oAuth2Client = getOAuth2Client();
-  const authorizeUrl = oAuth2Client.generateAuthUrl({
-    access_type: "offline",
-    scope: SCOPES,
-    prompt: "consent",
-  });
-  return c.redirect(authorizeUrl);
+  try {
+    // Check if required environment variables are present
+    if (
+      !process.env.CLIENT_ID ||
+      !process.env.CLIENT_SECRET ||
+      !process.env.REDIRECT_URI
+    ) {
+      console.error("Missing required environment variables for Google OAuth");
+      return c.json(
+        {
+          error: "Configuration error",
+          message: "OAuth credentials are not properly configured",
+        },
+        500,
+      );
+    }
+
+    const oAuth2Client = getOAuth2Client();
+    const authorizeUrl = oAuth2Client.generateAuthUrl({
+      access_type: "offline",
+      scope: SCOPES,
+      prompt: "consent",
+    });
+
+    return c.redirect(authorizeUrl);
+  } catch (error) {
+    console.error("Error in auth endpoint:", error);
+    return c.json(
+      {
+        error: "Authentication failed",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      500,
+    );
+  }
 };
 
 export const oauth2callback = async (c: Context) => {
