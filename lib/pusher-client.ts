@@ -4,7 +4,7 @@ let pusherInstance: Pusher | null = null;
 
 export function getPusherClient(): Pusher {
   if (!pusherInstance) {
-    pusherInstance = new Pusher("ebca36e63d3e34d99de9", {
+    pusherInstance = new Pusher(process.env.PUSHER_KEY!, {
       cluster: "ap2",
       forceTLS: true,
     });

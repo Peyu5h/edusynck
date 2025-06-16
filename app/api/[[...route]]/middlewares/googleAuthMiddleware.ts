@@ -4,30 +4,27 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Load the token from the committed key.json file if it exists
+export let cachedTokens: any = null;
 
-// Ensure config directory exists
-const CONFIG_DIR = path.join(__dirname, "..", "config");
-const TOKEN_PATH = path.join(CONFIG_DIR, "key.json");
+// Function to update the cached tokens
+export function updateCachedTokens(tokens: any) {
+  cachedTokens = tokens;
+}
 
-// Create a function to ensure the config directory exists
-function ensureConfigDirExists() {
-  try {
-    if (!fs.existsSync(CONFIG_DIR)) {
-      fs.mkdirSync(CONFIG_DIR, { recursive: true });
-      console.log(`Created config directory at: ${CONFIG_DIR}`);
-    }
-  } catch (error) {
-    console.error(`Failed to create config directory: ${error}`);
-    // Fall back to tmp directory if we can't create in the app directory
-    const tmpDir = path.join(process.cwd(), "tmp", "config");
-    if (!fs.existsSync(tmpDir)) {
-      fs.mkdirSync(tmpDir, { recursive: true });
-    }
-    return tmpDir;
+// Try to read from the key.json file if it exists at build time
+try {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const CONFIG_DIR = path.join(__dirname, "..", "config");
+  const TOKEN_PATH = path.join(CONFIG_DIR, "key.json");
+
+  if (fs.existsSync(TOKEN_PATH)) {
+    cachedTokens = JSON.parse(fs.readFileSync(TOKEN_PATH, "utf-8"));
+    console.log("Loaded auth tokens from key.json");
   }
-  return CONFIG_DIR;
+} catch (error) {
+  console.warn("Could not load tokens from file system:", error);
 }
 
 function getOAuth2Client() {
@@ -39,13 +36,9 @@ function getOAuth2Client() {
 }
 
 async function refreshAccessToken(oAuth2Client: Auth.OAuth2Client) {
-  // Ensure config directory exists before checking for token file
-  const configDir = ensureConfigDirExists();
-  const tokenPath = path.join(configDir, "key.json");
-
-  if (fs.existsSync(tokenPath)) {
-    const tokens = JSON.parse(fs.readFileSync(tokenPath, "utf-8"));
-    oAuth2Client.setCredentials(tokens);
+  // Use the cached tokens from the startup read
+  if (cachedTokens) {
+    oAuth2Client.setCredentials(cachedTokens);
 
     try {
       if (
@@ -55,19 +48,16 @@ async function refreshAccessToken(oAuth2Client: Auth.OAuth2Client) {
       ) {
         const { credentials: newTokens } =
           await oAuth2Client.refreshAccessToken();
-        fs.writeFileSync(tokenPath, JSON.stringify(newTokens));
+        // Update the cached tokens using the function
+        updateCachedTokens(newTokens);
         oAuth2Client.setCredentials(newTokens);
       }
     } catch (error) {
       console.error("Unable to refresh access token:", error);
-      try {
-        fs.unlinkSync(tokenPath);
-      } catch (unlinkErr) {
-        console.error("Failed to remove invalid token file:", unlinkErr);
-      }
       throw new Error("reauthorize");
     }
   } else {
+    // No tokens available
     throw new Error("Authorize by visiting /auth");
   }
 }

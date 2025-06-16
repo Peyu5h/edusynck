@@ -16,6 +16,7 @@ import {
   type DueTime,
   type Material,
 } from "../utils/functions";
+import { updateCachedTokens } from "../middlewares/googleAuthMiddleware";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -80,14 +81,24 @@ export const oauth2callback = async (c: Context) => {
   }
 
   try {
-    // Ensure config directory exists before writing token
-    const configDir = ensureConfigDirExists();
-    const tokenPath = path.join(configDir, "key.json");
-
     const oAuth2Client = getOAuth2Client();
     const { tokens } = await oAuth2Client.getToken(code);
 
-    fs.writeFileSync(tokenPath, JSON.stringify(tokens));
+    // Update cached tokens using the exported function
+    updateCachedTokens(tokens);
+
+    // Only attempt to write to filesystem in non-production environments
+    if (process.env.NODE_ENV !== "production") {
+      try {
+        // Ensure config directory exists before writing token
+        const configDir = ensureConfigDirExists();
+        const tokenPath = path.join(configDir, "key.json");
+        fs.writeFileSync(tokenPath, JSON.stringify(tokens));
+      } catch (fsError) {
+        console.warn("Could not write token to filesystem:", fsError);
+      }
+    }
+
     oAuth2Client.setCredentials(tokens);
 
     return c.text("Done :)");
