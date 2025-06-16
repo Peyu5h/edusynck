@@ -5,7 +5,6 @@ import indexRoute from "./routes";
 
 const app = new Hono();
 
-// Add logging middleware to help debug route issues
 app.use("*", async (c, next) => {
   console.log(`[${c.req.method}] ${c.req.url}`);
   await next();
