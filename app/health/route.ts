@@ -8,7 +8,7 @@ export async function GET() {
     environment: process.env.NODE_ENV || "unknown",
     server: "vercel",
     runtime: "edge",
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    methods: ["GET", "OPTIONS"],
   });
 }
 
@@ -23,9 +23,4 @@ export async function OPTIONS() {
       "Access-Control-Max-Age": "86400",
     },
   });
-}
-
-// Support HEAD for health checks
-export async function HEAD() {
-  return new NextResponse(null, { status: 200 });
 }

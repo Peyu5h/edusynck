@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
+  // Only run middleware on API routes
+  if (!request.nextUrl.pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
+
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-url", request.url);
 
@@ -28,6 +33,7 @@ export function middleware(request: NextRequest) {
   });
 }
 
+// Only run middleware on API routes
 export const config = {
   matcher: "/api/:path*",
 };
