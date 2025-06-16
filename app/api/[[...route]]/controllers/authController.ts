@@ -379,19 +379,27 @@ export const getCurrentUser = async (c: Context) => {
 
 export const getUser = async (c: Context) => {
   try {
+    console.log(`getUser request received via ${c.req.method}`);
+
     let userId;
 
     // Handle both GET and POST methods
     if (c.req.method === "GET") {
       userId = c.req.query("userId");
+      console.log("GET getUser params:", { userId: userId || "missing" });
     } else {
       // For POST requests
       try {
         const body = await c.req.json();
+        console.log("POST getUser body received");
         userId = body.userId;
       } catch (e) {
+        console.error("Error parsing getUser request body:", e);
         // If JSON parsing fails, try to get from query params as fallback
         userId = c.req.query("userId");
+        console.log("Fallback to query params:", {
+          userId: userId || "missing",
+        });
       }
     }
 

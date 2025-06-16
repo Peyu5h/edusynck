@@ -3,7 +3,42 @@ import { prisma } from "~/lib/prisma";
 
 export const saveWrongAnswers = async (c: Context) => {
   try {
-    const { userId, wrongAnswers } = await c.req.json();
+    console.log(`saveWrongAnswers request received via ${c.req.method}`);
+
+    let userId, wrongAnswers;
+
+    // Handle both GET and POST methods
+    if (c.req.method === "GET") {
+      userId = c.req.query("userId");
+
+      try {
+        const wrongAnswersParam = c.req.query("wrongAnswers");
+        wrongAnswers = wrongAnswersParam ? JSON.parse(wrongAnswersParam) : null;
+      } catch (e) {
+        return c.json(
+          {
+            success: false,
+            message: "Invalid wrong answers data in query parameter",
+          },
+          400,
+        );
+      }
+    } else {
+      // For POST requests
+      try {
+        const body = await c.req.json();
+        userId = body.userId;
+        wrongAnswers = body.wrongAnswers;
+      } catch (e) {
+        return c.json(
+          {
+            success: false,
+            message: "Invalid request body",
+          },
+          400,
+        );
+      }
+    }
 
     if (!userId) {
       return c.json(
