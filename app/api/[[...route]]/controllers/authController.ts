@@ -1,6 +1,6 @@
 import { Context } from "hono";
 import { prisma } from "~/lib/prisma";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import {
   registerSchema,
