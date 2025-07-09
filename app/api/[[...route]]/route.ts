@@ -1,58 +1,34 @@
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
+import { cors } from "hono/cors";
 import indexRoute from "./routes";
-import { corsMiddleware } from "./middlewares/corsMiddleware";
 
-// Create a new Hono app instance
-export const app = new Hono();
+const app = new Hono();
 
-// Add CORS headers for Vercel environment
-app.use("*", corsMiddleware);
-
-// Better error handling
 app.use("*", async (c, next) => {
-  try {
-    await next();
-  } catch (err) {
-    console.error("API Error:", err);
-    return c.json(
-      {
-        error: "Internal server error",
-        message: err instanceof Error ? err.message : "Unknown error occurred",
-        serverTime: new Date().toISOString(),
-      },
-      500,
-    );
-  }
+  console.log(`[${c.req.method}] ${c.req.url}`);
+  await next();
 });
 
-// Debug/healthcheck endpoint
-app.get("/debug", (c) => {
-  return c.json({
-    ok: true,
-    timestamp: new Date().toISOString(),
-    path: c.req.path,
-    env: process.env.NODE_ENV || "unknown",
-  });
-});
+app.use(
+  "*",
+  cors({
+    origin: "*",
+    credentials: true,
+    allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["POST", "GET", "OPTIONS", "DELETE", "PUT", "PATCH"],
+    exposeHeaders: ["Content-Length"],
+  }),
+);
 
-// API root documentation
-app.get("/", (c) => {
-  return c.json({
-    status: "ok",
-    message: "Academia API running",
-    timestamp: new Date().toISOString(),
-  });
-});
+app.route("/api", indexRoute);
 
-// Mount all routes directly (no nesting/prefixes)
-app.route("/", indexRoute);
+export type AppType = typeof app;
 
-// Export handler functions
+// Make sure all methods are properly handled and exported
 export const GET = handle(app);
 export const POST = handle(app);
 export const PUT = handle(app);
+export const PATCH = handle(app); // Added PATCH method
 export const DELETE = handle(app);
-export const PATCH = handle(app);
 export const OPTIONS = handle(app);
-export const HEAD = handle(app);

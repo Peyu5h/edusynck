@@ -1,14 +1,41 @@
 import { Context, Next } from "hono";
 import { google, Auth } from "googleapis";
+import { prisma } from "~/lib/prisma"; // Import prisma
 
-// Load the token from memory cache instead of filesystem
+// Load the token from the committed key.json file if it exists
 export let cachedTokens: any = null;
 
 // Function to update the cached tokens
-export function updateCachedTokens(tokens: any) {
+export async function updateCachedTokens(tokens: any) {
   cachedTokens = tokens;
-  console.log("Cached tokens updated successfully");
+  try {
+    await prisma.apiKey.upsert({
+      where: { name: "googleAuthTokens" },
+      update: { tokens: tokens },
+      create: { name: "googleAuthTokens", tokens: tokens },
+    });
+    console.log("Cached tokens updated and saved to DB successfully");
+  } catch (error) {
+    console.error("Error saving tokens to DB:", error);
+  }
 }
+
+// Try to read from the database at startup
+(async () => {
+  try {
+    const dbTokens = await prisma.apiKey.findUnique({
+      where: { name: "googleAuthTokens" },
+    });
+    if (dbTokens) {
+      cachedTokens = dbTokens.tokens;
+      console.log("Loaded auth tokens from DB");
+    } else {
+      console.log("No googleAuthTokens found in DB");
+    }
+  } catch (error) {
+    console.warn("Could not load tokens from DB:", error);
+  }
+})();
 
 function getOAuth2Client() {
   if (
@@ -28,7 +55,7 @@ function getOAuth2Client() {
 }
 
 async function refreshAccessToken(oAuth2Client: Auth.OAuth2Client) {
-  // Use the cached tokens from memory
+  // Use the cached tokens from the startup read
   if (cachedTokens) {
     console.log("Using cached tokens...");
     oAuth2Client.setCredentials(cachedTokens);
@@ -40,10 +67,9 @@ async function refreshAccessToken(oAuth2Client: Auth.OAuth2Client) {
           Date.now() >= oAuth2Client.credentials.expiry_date)
       ) {
         console.log("Token expired, refreshing...");
-        const { credentials: newTokens } =
-          await oAuth2Client.refreshAccessToken();
+        const { credentials: newTokens } = await oAuth2Client.refreshAccessToken();
         // Update the cached tokens using the function
-        updateCachedTokens(newTokens);
+        await updateCachedTokens(newTokens);
         oAuth2Client.setCredentials(newTokens);
         console.log("Token refreshed successfully");
       } else {

@@ -265,6 +265,12 @@ model RoadmapTopic {
   order       Int         @default(0)
 }
 
+model ApiKey {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  name   String @unique
+  tokens Json
+}
+
 enum UserRole {
   STUDENT
   ADMIN

@@ -1,10 +1,10 @@
 import { Context } from "hono";
 import { google } from "googleapis";
+import { prisma } from "~/lib/prisma";
+import { updateCachedTokens } from "../middlewares/googleAuthMiddleware";
 import fetch from "node-fetch";
 import NodeCache from "node-cache";
-import { prisma } from "~/lib/prisma";
 import { getTextExtractor } from "office-text-extractor";
-import { extname } from "path";
 import {
   formatDueDate,
   getFileType,
@@ -14,7 +14,7 @@ import {
   type DueTime,
   type Material,
 } from "../utils/functions";
-import { updateCachedTokens } from "../middlewares/googleAuthMiddleware";
+import { extname } from "path";
 
 const SCOPES = [
   "https://www.googleapis.com/auth/classroom.courses.readonly",
@@ -84,8 +84,8 @@ export const oauth2callback = async (c: Context) => {
     const oAuth2Client = getOAuth2Client();
     const { tokens } = await oAuth2Client.getToken(code);
 
-    // Update cached tokens using the exported function
-    updateCachedTokens(tokens);
+    // Update cached tokens using the exported function, which now saves to DB
+    await updateCachedTokens(tokens);
 
     oAuth2Client.setCredentials(tokens);
 
@@ -284,7 +284,7 @@ export const getImage = async (c: Context) => {
       "Origin, X-Requested-With, Content-Type, Accept, Authorization",
     );
     c.header("Content-Type", contentType!);
-    return c.body(imageBuffer);
+    return c.body(imageBuffer as unknown as ArrayBuffer);
   } catch (error) {
     console.error("Error fetching image:", error);
     return c.json(
@@ -330,21 +330,7 @@ export const extractTextFromPptxUrl = async (c: Context) => {
 
 export const getYoutubeVideos = async (c: Context) => {
   try {
-    let keywords;
-
-    // Handle both GET and POST methods
-    if (c.req.method === "GET") {
-      keywords = c.req.query("keywords");
-    } else {
-      // For POST requests
-      try {
-        const body = await c.req.json();
-        keywords = body.keywords;
-      } catch (e) {
-        // Fallback to query parameters if JSON parsing fails
-        keywords = c.req.query("keywords");
-      }
-    }
+    const { keywords } = await c.req.json();
 
     if (!keywords || typeof keywords !== "string") {
       return c.json({ error: "Keywords are required" }, 400);
@@ -427,11 +413,10 @@ export const getYoutubeVideos = async (c: Context) => {
   }
 };
 
+// Remove debugFileSystem as file system operations are not allowed in serverless environment
 export const debugFileSystem = async (c: Context) => {
-  // Simple debug endpoint that doesn't depend on file system
   return c.json({
+    message: "File system debugging is not available in serverless environment.",
     serverless: true,
-    environment: process.env.NODE_ENV,
-    now: new Date().toISOString(),
-  });
+  }, 200);
 };
