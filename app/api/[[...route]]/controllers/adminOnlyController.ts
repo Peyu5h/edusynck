@@ -412,11 +412,3 @@ export const getYoutubeVideos = async (c: Context) => {
     );
   }
 };
-
-// Remove debugFileSystem as file system operations are not allowed in serverless environment
-export const debugFileSystem = async (c: Context) => {
-  return c.json({
-    message: "File system debugging is not available in serverless environment.",
-    serverless: true,
-  }, 200);
-};
