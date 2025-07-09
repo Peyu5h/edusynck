@@ -3,11 +3,10 @@ import { prisma } from "~/lib/prisma";
 import Pusher from "pusher";
 import { getChannelName } from "~/lib/pusher-client";
 
-// Initialize Pusher with the provided credentials
 const pusher = new Pusher({
-  appId: process.env.PUSHER_APPID!,
-  key: process.env.PUSHER_KEY!,
-  secret: process.env.PUSHER_SECRET!,
+  appId: process.env.NEXT_PUBLIC_PUSHER_APPID!,
+  key: process.env.NEXT_PUBLIC_PUSHER_KEY!,
+  secret: process.env.NEXT_PUBLIC_PUSHER_SECRET!,
   cluster: "ap2",
   useTLS: true,
 });
@@ -29,7 +28,6 @@ export const getMessages = async (c: Context) => {
     });
 
     if (!chat) {
-      // If chat doesn't exist yet, create it and return empty messages
       await prisma.chat.create({
         data: {
           name: `Class ${classId} Chat`,
@@ -57,7 +55,6 @@ export const sendMessage = async (c: Context) => {
       );
     }
 
-    // Find or create chat
     let chat = await prisma.chat.findFirst({
       where: { name: `Class ${room} Chat` },
     });
@@ -71,14 +68,12 @@ export const sendMessage = async (c: Context) => {
         },
       });
     } else {
-      // Make sure user is connected to the chat
       await prisma.chat.update({
         where: { id: chat.id },
         data: { users: { connect: { id: sender.id } } },
       });
     }
 
-    // Create message in database
     const newMessage = await prisma.message.create({
       data: {
         content: content || "",
@@ -91,10 +86,8 @@ export const sendMessage = async (c: Context) => {
       },
     });
 
-    // Use channel name from the client utility for consistency
     const channelName = getChannelName(room);
 
-    // Trigger Pusher event with the new message
     await pusher.trigger(channelName, "new-message", newMessage);
 
     return c.json({
@@ -126,8 +119,6 @@ export const pusherAuth = async (c: Context) => {
       );
     }
 
-    // If using presence channels, you would add user info here
-    // For basic private channels, this is sufficient
     const auth = pusher.authorizeChannel(socketId, channel);
 
     return c.json(auth);

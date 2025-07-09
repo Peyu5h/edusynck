@@ -25,7 +25,7 @@ export default function ChatsPage() {
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch initial messages when component mounts or user changes
+  // Fetch initial messages 
   useEffect(() => {
     async function fetchMessages() {
       if (!user?.classId) return;
@@ -46,11 +46,9 @@ export default function ChatsPage() {
     fetchMessages();
   }, [user?.classId]);
 
-  // Subscribe to Pusher channel for real-time updates
   useEffect(() => {
     if (!user?.classId) return;
 
-    // Subscribe to class chat events
     const unsubscribe = subscribeToClassChat(
       user.classId,
       (newMessage: Message) => {
@@ -58,14 +56,12 @@ export default function ChatsPage() {
         setMessages((prevMessages) => [...prevMessages, newMessage]);
       },
     );
-
-    // Cleanup subscription when component unmounts
     return () => {
       unsubscribe();
     };
   }, [user?.classId]);
 
-  // Scroll to bottom when messages change
+  // auto scroll bottom 
   useEffect(() => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop =
@@ -87,7 +83,6 @@ export default function ChatsPage() {
         files: [],
       };
 
-      // Process file uploads if any (maintain existing functionality)
       if (files && files.length > 0) {
         const uploadedFiles = await Promise.all(
           files.map(async (file) => {
@@ -115,7 +110,6 @@ export default function ChatsPage() {
       }
 
       try {
-        // Send message using our new API endpoint
         await axios.post("/api/chat/send", messageData);
         console.log("Message sent successfully");
       } catch (error) {

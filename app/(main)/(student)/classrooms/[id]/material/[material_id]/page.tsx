@@ -5,8 +5,6 @@ import { useEffect, useState } from "react";
 import { ClassroomBread } from "~/components/BreadCrump/ClassroomBread";
 import MaterialLoader from "~/components/Loaders/MaterialLoader";
 import MaterialCard from "~/components/MaterialCard";
-import { LuDot } from "react-icons/lu";
-import { GoDot } from "react-icons/go";
 
 interface Course {
   id: string;

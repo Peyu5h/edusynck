@@ -14,7 +14,6 @@ import Textarea from "react-textarea-autosize";
 import pdfToText from "react-pdftotext";
 import Tesseract from "tesseract.js";
 import * as pdfjsLib from "pdfjs-dist";
-import "pdfjs-dist/build/pdf.worker.min.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Button } from "./ui/button";
 import MarkdownRenderer from "./MarkdownRender";
@@ -29,7 +28,7 @@ import { Message } from "~/lib/types";
 import EmptyScreen, { ChatItem } from "./ChatScreen";
 import { useToast } from "./ui/use-toast";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
 
 const LoadingRenderer: React.FC<{
   document: IDocument | undefined;

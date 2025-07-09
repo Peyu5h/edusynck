@@ -6,9 +6,6 @@ import {
   registerSchema,
   loginSchema,
   teacherRegisterSchema,
-  type RegisterInput,
-  type LoginInput,
-  type TeacherRegisterInput,
 } from "../schemas/auth.schema";
 
 export const register = async (c: Context) => {
@@ -185,11 +182,6 @@ export const login = async (c: Context) => {
       email = c.req.query("email");
       password = c.req.query("password");
 
-      console.log("GET login params:", {
-        email: email ? "provided" : "missing",
-        password: password ? "provided" : "missing",
-      });
-
       if (!email || !password) {
         return c.json(
           {
@@ -220,7 +212,6 @@ export const login = async (c: Context) => {
       } catch (e) {
         console.error("Error parsing login request:", e);
 
-        // If JSON parsing fails, try to get from query params as fallback
         email = c.req.query("email");
         password = c.req.query("password");
 
@@ -238,8 +229,6 @@ export const login = async (c: Context) => {
       }
     }
 
-    // Debug log to see if we got this far with valid credentials
-    console.log(`Attempting to authenticate: ${email}`);
 
     const user = await prisma.user.findUnique({
       where: { email },

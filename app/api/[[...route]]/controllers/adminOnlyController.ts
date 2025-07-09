@@ -83,8 +83,6 @@ export const oauth2callback = async (c: Context) => {
   try {
     const oAuth2Client = getOAuth2Client();
     const { tokens } = await oAuth2Client.getToken(code);
-
-    // Update cached tokens using the exported function, which now saves to DB
     await updateCachedTokens(tokens);
 
     oAuth2Client.setCredentials(tokens);
@@ -342,8 +340,6 @@ export const getYoutubeVideos = async (c: Context) => {
       return c.json({ error: "YouTube API key is not configured" }, 500);
     }
 
-    // Log the first few characters of the API key for debugging (safely)
-    console.log("API Key prefix:", YOUTUBE_API_KEY.substring(0, 5) + "...");
 
     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
       keywords,
@@ -369,7 +365,6 @@ export const getYoutubeVideos = async (c: Context) => {
     if (!response.ok) {
       console.error("YouTube API error response:", responseText);
 
-      // Handle specific error cases
       if (response.status === 403) {
         return c.json(
           {

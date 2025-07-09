@@ -1,11 +1,9 @@
 import { Context, Next } from "hono";
 import { google, Auth } from "googleapis";
-import { prisma } from "~/lib/prisma"; // Import prisma
+import { prisma } from "~/lib/prisma"; 
 
-// Load the token from the committed key.json file if it exists
 export let cachedTokens: any = null;
 
-// Function to update the cached tokens
 export async function updateCachedTokens(tokens: any) {
   cachedTokens = tokens;
   try {
@@ -20,7 +18,6 @@ export async function updateCachedTokens(tokens: any) {
   }
 }
 
-// Try to read from the database at startup
 (async () => {
   try {
     const dbTokens = await prisma.apiKey.findUnique({
@@ -55,7 +52,6 @@ function getOAuth2Client() {
 }
 
 async function refreshAccessToken(oAuth2Client: Auth.OAuth2Client) {
-  // Use the cached tokens from the startup read
   if (cachedTokens) {
     console.log("Using cached tokens...");
     oAuth2Client.setCredentials(cachedTokens);
@@ -68,7 +64,6 @@ async function refreshAccessToken(oAuth2Client: Auth.OAuth2Client) {
       ) {
         console.log("Token expired, refreshing...");
         const { credentials: newTokens } = await oAuth2Client.refreshAccessToken();
-        // Update the cached tokens using the function
         await updateCachedTokens(newTokens);
         oAuth2Client.setCredentials(newTokens);
         console.log("Token refreshed successfully");
@@ -80,7 +75,6 @@ async function refreshAccessToken(oAuth2Client: Auth.OAuth2Client) {
       throw new Error("reauthorize");
     }
   } else {
-    // No tokens available
     console.error("No cached tokens available");
     throw new Error("Authorize by visiting /auth");
   }

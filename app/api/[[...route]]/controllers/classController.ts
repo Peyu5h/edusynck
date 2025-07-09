@@ -9,7 +9,6 @@ import {
   type DueDate,
   type DueTime,
   type Material,
-  type OrganizedMaterials,
 } from "../utils/functions";
 import { extname } from "path";
 

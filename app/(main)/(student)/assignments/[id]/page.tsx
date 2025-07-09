@@ -17,8 +17,6 @@ export default function AssignmentPage() {
 
   useEffect(() => {
     setIsSidebarExpanded(false);
-
-    // Fetch assignment and course info
     const fetchAssignmentInfo = async () => {
       try {
         if (id) {
@@ -32,9 +30,7 @@ export default function AssignmentPage() {
         }
       } catch (error) {
         console.error("Failed to fetch assignment info:", error);
-        // Set fallback values
         setAssignmentName(`Assignment ${id}`);
-        // Attempt to find courseId in URL
         const pathParts = window.location.pathname.split("/");
         const possibleCourseIndex = pathParts.findIndex(
           (part) => part === "classrooms",

@@ -1,11 +1,9 @@
-import { UserRole } from "@prisma/client";
-import { isToday, parse, format, differenceInDays } from "date-fns";
+import {  format, differenceInDays } from "date-fns";
 import { prisma } from "~/lib/prisma";
 import { Context } from "hono";
 import { success, err } from "../utils/response";
 import { JsonValue } from "@prisma/client/runtime/library";
 
-// Define the streak interface
 interface StreakData {
   currentStreak: number;
   longestStreak: number;
@@ -49,7 +47,6 @@ export const getUserById = async (c: Context) => {
 
     const { password, ...userWithoutPassword } = user;
 
-    // Make courses easily accessible in the response
     const userData = {
       ...userWithoutPassword,
       courses:
@@ -113,10 +110,8 @@ export const updateUserStreak = async (c: Context) => {
       return c.json(err("User ID is required"), 400);
     }
 
-    // Get the current date in YYYY-MM-DD format
     const today = format(new Date(), "yyyy-MM-dd");
 
-    // Find the user and their current streak data
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -129,7 +124,6 @@ export const updateUserStreak = async (c: Context) => {
       return c.json(err("User not found"), 404);
     }
 
-    // Default streak data if user doesn't have any
     let streak: StreakData = (user.streak as unknown as StreakData) || {
       currentStreak: 0,
       longestStreak: 0,
@@ -137,19 +131,16 @@ export const updateUserStreak = async (c: Context) => {
       activityLog: [],
     };
 
-    // Check if the user has already logged in today
     const todayActivity = streak.activityLog?.find(
       (activity) => activity.date === today,
     );
 
     if (!todayActivity) {
-      // If user hasn't logged in today, add today to their activity log
       const updatedActivityLog = [
         ...(streak.activityLog || []),
         { date: today, count: 1 },
       ];
 
-      // Check if the user's last activity was yesterday to maintain the streak
       let currentStreak = streak.currentStreak || 0;
       const lastActiveDate = streak.lastActiveDate
         ? new Date(streak.lastActiveDate)
@@ -170,14 +161,11 @@ export const updateUserStreak = async (c: Context) => {
           currentStreak = 1;
         }
       } else {
-        // First time user activity, set streak to 1
         currentStreak = 1;
       }
 
-      // Update longest streak if needed
       const longestStreak = Math.max(currentStreak, streak.longestStreak || 0);
 
-      // Update user's streak data
       const updatedStreak: StreakData = {
         currentStreak,
         longestStreak,
@@ -185,7 +173,6 @@ export const updateUserStreak = async (c: Context) => {
         activityLog: updatedActivityLog,
       };
 
-      // Save the updated streak data
       await prisma.user.update({
         where: { id: userId },
         data: { streak: updatedStreak as unknown as JsonValue },
@@ -194,7 +181,6 @@ export const updateUserStreak = async (c: Context) => {
       return c.json(success(updatedStreak));
     }
 
-    // User has already logged in today
     return c.json({ streak, message: "Streak already updated today" });
   } catch (error) {
     console.error("Error updating user streak:", error);
