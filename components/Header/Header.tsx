@@ -44,11 +44,7 @@ const Header = () => {
           </div>
         )}
         <div>
-          <div className="user-btn hidden gap-x-8 md:flex">
-            <UserButton user={user} />
-            <Notification />
-          </div>
-          <div className="mb-12 flex items-center justify-center">
+          <div className="mb-12 flex items-center justify-center md:hidden">
             <MobileHamburger />
           </div>
         </div>

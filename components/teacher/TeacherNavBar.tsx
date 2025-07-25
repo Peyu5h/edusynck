@@ -2,24 +2,20 @@
 
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { Bell, LogOut, User } from "lucide-react";
+import { Bell } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { useLogout } from "~/hooks/useAuth";
 import { Button } from "~/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { usePathname } from "next/navigation";
 
 const TeacherNavBar = () => {
   const user = useSelector((state: any) => state.user.user);
   const [showNotifications, setShowNotifications] = useState(false);
-  const { mutate: logout } = useLogout();
   const path = usePathname();
   const [greeting, setGreeting] = useState("Good morning");
   const [isAssignment, setIsAssignment] = useState(false);
@@ -38,10 +34,6 @@ const TeacherNavBar = () => {
   }, [path]);
 
   const firstName = user?.name?.split(" ")[0];
-
-  const handleLogout = () => {
-    logout();
-  };
 
   return (
     <div>
@@ -62,39 +54,6 @@ const TeacherNavBar = () => {
         )}
         <div>
           <div className="user-btn hidden gap-x-8 md:flex">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="relative h-8 w-8 rounded-full"
-                >
-                  <Avatar>
-                    <AvatarImage src="" alt={user?.name} />
-                    <AvatarFallback>
-                      {user?.name?.substring(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col">
-                    <span>{user?.name}</span>
-                    <span className="text-xs text-gray-500">{user?.email}</span>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">

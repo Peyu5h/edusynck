@@ -24,9 +24,9 @@ export default function TeacherDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>("summary");
 
-  if (!user) {
-    return <div>Loading...</div>;
-  }
+  // if (!user) {
+  //   return <div>Loading...</div>;
+  // }
 
   const classCount = user.taughtClasses?.length || 0;
 

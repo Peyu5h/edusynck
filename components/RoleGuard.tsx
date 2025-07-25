@@ -43,13 +43,13 @@ export default function RoleGuard({
   }, [user, isLoading, error, allowedRoles, redirectTo, router]);
 
   // While loading, show a loading state
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        Loading...
-      </div>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <div className="flex h-screen items-center justify-center">
+  //       Loading...
+  //     </div>
+  //   );
+  // }
 
   // If there's an error or no user, don't render children
   if (error || !user) {

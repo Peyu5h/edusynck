@@ -1,15 +1,33 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import TextRing from "../TextRing";
 import { MdArrowOutward } from "react-icons/md";
 
 const OnBoardText = () => {
   const [isHovered, setIsHovered] = useState(false);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
+  useEffect(() => {
+    // Check if fonts are loaded
+    if (document.fonts) {
+      document.fonts.ready.then(() => {
+        setFontsLoaded(true);
+      });
+    } else {
+      // Fallback for browsers that don't support document.fonts
+      setTimeout(() => {
+        setFontsLoaded(true);
+      }, 100);
+    }
+  }, []);
 
   return (
     <div className="hidden md:block">
-      <div className="relative z-10 mb-12 flex flex-col text-center font-robson text-6xl">
+      <div
+        className={`relative z-10 mb-12 flex flex-col text-center font-robson text-6xl ${fontsLoaded ? "opacity-100" : "opacity-0"}`}
+        style={{ transition: "opacity 0.3s ease-in-out" }}
+      >
         <div className="mb-[-2.7rem] text-4xl md:text-9xl md:leading-snug">
           CREATE NEW
         </div>

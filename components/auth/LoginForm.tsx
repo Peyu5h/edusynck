@@ -94,8 +94,11 @@ const LoginForm = () => {
 
   return (
     <div>
-      <div className="flex h-[80vh] w-full items-center rounded-[1rem] p-8">
-        <form onSubmit={handleSubmit} className="flex w-72 flex-col gap-y-8">
+      <div className="flex w-full items-center rounded-[1rem] border p-2">
+        <form
+          onSubmit={handleSubmit}
+          className="flex w-80 flex-col gap-y-8 rounded-lg p-8 shadow-lg backdrop-blur-sm"
+        >
           <InputField
             id="email"
             label="Email"
@@ -126,42 +129,47 @@ const LoginForm = () => {
               Please wait
             </Button>
           ) : (
-            <Button className="w-full py-6" type="submit">
+            <Button className="w-full bg-primary/80 py-6" type="submit">
               Sign in
             </Button>
           )}
 
-          {guestLoader ? (
-            <Button className="w-full py-6" disabled>
-              <Loader2 className="mr-2 size-4 animate-spin" />
-              Please wait
-            </Button>
-          ) : (
-            <Button
-              className="w-full py-6"
-              type="button"
-              onClick={handleGuestLogin}
-              disabled={isPending}
-            >
-              Continue as Student
-            </Button>
-          )}
+          <h1 className="text-center text-sm text-muted-foreground">
+            OR Continue as Guest
+          </h1>
+          <div className="flex space-x-2">
+            {guestLoader ? (
+              <Button className="w-full py-6" disabled>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                Please wait
+              </Button>
+            ) : (
+              <Button
+                className="w-full bg-primary/80 py-6"
+                type="button"
+                onClick={handleGuestLogin}
+                disabled={isPending}
+              >
+                Student
+              </Button>
+            )}
 
-          {teacherLoader ? (
-            <Button className="w-full py-6" disabled>
-              <Loader2 className="mr-2 size-4 animate-spin" />
-              Please wait
-            </Button>
-          ) : (
-            <Button
-              className="w-full py-6"
-              type="button"
-              onClick={handleTeacherLogin}
-              disabled={isPending}
-            >
-              Continue as Teacher
-            </Button>
-          )}
+            {teacherLoader ? (
+              <Button className="w-full py-6" disabled>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                Please wait
+              </Button>
+            ) : (
+              <Button
+                className="w-full py-6"
+                variant="outline"
+                onClick={handleTeacherLogin}
+                disabled={isPending}
+              >
+                Teacher
+              </Button>
+            )}
+          </div>
 
           <div className="text-center text-sm">
             Don&apos;t have an account?{" "}

@@ -19,7 +19,7 @@ export default async function Authlayout({
       ></div>
       <div className="flex w-full max-w-[1368px] flex-col items-center justify-between lg:flex-row">
         <OnBoardText />
-        {children}
+        <div className="relative z-10">{children}</div>
       </div>
     </div>
   );

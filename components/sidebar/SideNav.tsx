@@ -22,6 +22,18 @@ import { sidebarExpandedAtom } from "~/context/atom";
 import { usePathname } from "next/navigation";
 import { useCourses } from "~/hooks/useGetCourses";
 import SideNavLoader from "../Loaders/SideNavLoader";
+import { useSelector } from "react-redux";
+import { useLogout } from "~/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Settings, LogOut } from "lucide-react";
 
 export default function SideNav() {
   const pathname = usePathname();
@@ -30,6 +42,8 @@ export default function SideNav() {
   const [isClassroomsOpen, setIsClassroomsOpen] = useState(true);
   const [activePath, setActivePath] = useState("");
   const [isClient, setIsClient] = useState(false);
+  const user = useSelector((state: any) => state.user.user);
+  const { mutate: logout } = useLogout();
 
   useEffect(() => {
     setIsClient(true);
@@ -55,9 +69,9 @@ export default function SideNav() {
       </div>
     );
 
-  const navItems = NavItems();
+  const navItems = NavItems(user?.role, pathname);
 
-  if (!courses) return null;
+  if (!courses && user?.role === "STUDENT") return null;
 
   const getFirstCourseId = () =>
     courses && courses.length > 0 ? courses[0].id : "";
@@ -89,6 +103,10 @@ export default function SideNav() {
       .join("-");
   }
 
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <div className="pr-4">
       <div
@@ -97,32 +115,32 @@ export default function SideNav() {
           "hidden h-[97vh] transform rounded-xl bg-bground2 transition-all duration-300 ease-in-out sm:flex",
         )}
       >
-        <aside className="flex h-full w-full columns-1 flex-col overflow-x-hidden break-words px-4">
+        <aside className="hide-scrollbar flex h-full w-full columns-1 flex-col overflow-x-hidden break-words px-4">
           <div className="relative mt-4 pb-2">
             <div className="my-4 mb-6 flex items-center justify-center">
               {isSidebarExpanded ? (
                 <h1 className="font-robson text-5xl text-pri">EDUSYNC</h1>
               ) : (
-                <h1 className="font-robson text-5xl text-pri">A</h1>
+                <h1 className="font-robson text-5xl text-pri">E</h1>
               )}
             </div>
             <div className="flex flex-col space-y-1">
               {navItems.map((item, idx) => {
                 if (item.position === "top") {
-                  if (item.name === "Classrooms") {
+                  if (item.name === "Classrooms" && user?.role === "STUDENT") {
                     const isAnyClassroomActive = navItems.some(
                       (nav) => nav.active && nav.href.startsWith("/classrooms"),
                     );
                     return (
                       <div key={idx}>
-                        <Separator
+                        {/* <Separator
                           className={ny(
                             "my-2 h-[0.5px] rounded-xl bg-neutral-700",
 
                             (!isSidebarExpanded || !isClassroomsOpen) &&
                               "hidden",
                           )}
-                        />
+                        /> */}
                         <Collapsible
                           open={isClassroomsOpen}
                           onOpenChange={setIsClassroomsOpen}
@@ -164,7 +182,7 @@ export default function SideNav() {
                             </div>
                           </CollapsibleTrigger>
                           <CollapsibleContent>
-                            <div className="my-4 flex flex-col pl-6">
+                            <div className="my-2 flex flex-col pl-6">
                               {courses?.map((course: any) => (
                                 <SideSubjectitems
                                   key={course.id}
@@ -173,7 +191,7 @@ export default function SideNav() {
                                   path={`/classrooms/${course.id}`}
                                   active={isPathActive(
                                     `/classrooms/${course.id}`,
-                                  )} // Update this line
+                                  )}
                                   isSidebarExpanded={true}
                                   isClassroom
                                   onClick={() =>
@@ -235,6 +253,53 @@ export default function SideNav() {
                 );
               }
             })}
+
+            {user && (
+              <div className="mt-4">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="group flex cursor-pointer items-center gap-3 rounded-lg border p-2 hover:bg-bground3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src="" alt={user?.name} />
+                        <AvatarFallback className="flex items-center justify-center pt-1 group-hover:border-[1px] group-hover:border-gray-500">
+                          {user?.name?.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      {isSidebarExpanded && (
+                        <div className="flex-1 overflow-hidden">
+                          <p className="truncate text-sm font-medium text-text">
+                            {user?.name}
+                          </p>
+                          <p className="truncate text-xs text-thintext">
+                            {user?.email}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col">
+                        <span>{user?.name}</span>
+                        <span className="text-xs text-gray-500">
+                          {user?.email}
+                        </span>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
           </div>
         </aside>
         <div className="relative mt-[calc(calc(90vh)-40px)]">
@@ -327,7 +392,7 @@ export const SideSubjectitems: React.FC<{
     <>
       <Link
         href={path}
-        className={`relative flex h-full items-center whitespace-nowrap rounded-xl py-2 text-lg ${
+        className={`relative flex h-full items-center whitespace-nowrap rounded-xl py-1 text-lg ${
           active
             ? "font-base text-text shadow-sm"
             : "text-thintext dark:text-neutral-400"

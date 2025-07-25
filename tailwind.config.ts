@@ -26,7 +26,7 @@ const config = {
     },
     extend: {
       fontFamily: {
-        robson: ["Robson Bold", "sans-serif"],
+        robson: ["Robson Bold", "Arial Black", "Helvetica Bold", "sans-serif"],
         khula: ["Khula", "sans-serif"],
         antic: ["Antic Didone", "sans-serif"],
       },

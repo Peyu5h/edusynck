@@ -25,7 +25,7 @@ export default function ChatsPage() {
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch initial messages 
+  // Fetch initial messages
   useEffect(() => {
     async function fetchMessages() {
       if (!user?.classId) return;
@@ -61,7 +61,7 @@ export default function ChatsPage() {
     };
   }, [user?.classId]);
 
-  // auto scroll bottom 
+  // auto scroll bottom
   useEffect(() => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop =
@@ -133,18 +133,16 @@ export default function ChatsPage() {
   }
 
   return (
-    <Card className="mx-auto mt-[-60px] flex h-[84vh] w-full max-w-6xl flex-col justify-between overflow-hidden border-none bg-transparent">
-      <CardContent>
-        <div
-          ref={messagesContainerRef}
-          className="scrollbar h-[68vh] overflow-y-auto pr-4"
-        >
-          <Messages messages={messages} currentUserId={user.id} />
-        </div>
-      </CardContent>
-      <CardFooter className="min-w-4xl flex w-full justify-center">
+    <div className="flex h-full min-h-0 w-full flex-col">
+      <div
+        ref={messagesContainerRef}
+        className="scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 py-4"
+      >
+        <Messages messages={messages} currentUserId={user.id} />
+      </div>
+      <div className="w-full bg-transparent px-2 pb-4 pt-2">
         <ChatInput onSend={sendMessage} />
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }

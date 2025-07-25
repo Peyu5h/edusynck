@@ -49,8 +49,11 @@ const RegisterForm = () => {
 
   return (
     <div>
-      <div className="flex h-[80vh] w-full items-center rounded-[1rem] p-8">
-        <form onSubmit={handleSubmit} className="flex w-72 flex-col gap-y-8">
+      <div className="flex w-full items-center rounded-[1rem] border p-2">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-y-8 rounded-lg p-8 shadow-lg backdrop-blur-sm"
+        >
           <InputField
             id="name"
             label="Name"
