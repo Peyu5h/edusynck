@@ -740,7 +740,7 @@ export const getStudentQuizAttempts = async (c: Context) => {
 export async function generateQuestionsWithAI(content: string) {
   try {
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-2.0-flash",
     });
 
     const prompt = `Based on the following content, generate 5 multiple-choice questions (MCQs) for a quiz. Each question should have 4 options, with only one correct answer. Format the output as a valid JSON array of objects, like this:

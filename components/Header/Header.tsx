@@ -11,11 +11,12 @@ const Header = () => {
   const path = usePathname();
   const { user, isLoading, error } = useUser();
   const [isAssignment, setIsAssignment] = useState(false);
+  const [isMaterial, setIsMaterial] = useState(false);
   const [greeting, setGreeting] = useState("Good morning");
 
   useEffect(() => {
     setIsAssignment(path.includes("assignments/"));
-
+    setIsMaterial(path.includes("material/"));
     const currentHour = new Date().getHours();
     setGreeting(
       currentHour >= 12 && currentHour < 18
@@ -31,13 +32,8 @@ const Header = () => {
   return (
     <div>
       <div className="flex w-full items-center justify-between rounded-xl px-4">
-        {isAssignment ? (
-          <div className="">
-            <h1 className="mt-2 text-3xl font-light text-text">
-              Assignment No-1
-            </h1>
-            <p className="text-thintext">Submit the assignment before TT1</p>
-          </div>
+        {isAssignment || isMaterial ? (
+          <div className=""></div>
         ) : (
           <div className="font-antic text-2xl sm:text-4xl">
             {greeting} <span className="text-pri">{firstName}</span>

@@ -221,7 +221,7 @@ Summary:`;
     setIsGenerating(true);
     try {
       const model = genAI.current.getGenerativeModel({
-        model: "gemini-1.5-flash-latest",
+        model: "gemini-2.0-flash",
       });
       const result = await model.generateContentStream(prompt);
       let fullResponse = "";
@@ -254,7 +254,7 @@ Summary:`;
 
     try {
       const model = genAI.current.getGenerativeModel({
-        model: "gemini-1.5-flash-latest",
+        model: "gemini-2.0-flash",
       });
 
       const chat = model.startChat({

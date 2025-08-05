@@ -286,7 +286,7 @@ const MaterialView: React.FC<{
     setIsGenerating(true);
     try {
       const model = genAI.current.getGenerativeModel({
-        model: "gemini-1.5-flash-latest",
+        model: "gemini-2.0-flash",
       });
       const result = await model.generateContentStream(prompt);
       let fullResponse = "";
@@ -313,7 +313,7 @@ const MaterialView: React.FC<{
     setIsGenerating(true);
     try {
       const model = genAI.current.getGenerativeModel({
-        model: "gemini-1.5-flash-latest",
+        model: "gemini-2.0-flash",
       });
       const prompt = `Analyze the following text and generate a concise search string (max 5-6 words) that captures the main topic for searching related YouTube videos:
 
@@ -355,7 +355,7 @@ Search string:`;
 
     try {
       const model = genAI.current.getGenerativeModel({
-        model: "gemini-1.5-flash-latest",
+        model: "gemini-2.0-flash",
       });
 
       const chat = model.startChat({
@@ -481,7 +481,7 @@ Search string:`;
         setIsLoading(true);
         try {
           const model = genAI.current.getGenerativeModel({
-            model: "gemini-1.5-flash-latest",
+            model: "gemini-2.0-flash",
           });
 
           const prompt = `
