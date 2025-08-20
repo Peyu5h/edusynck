@@ -84,11 +84,11 @@ export default function RecommendationsPage() {
       const wrongAnswersText = wrongAnswers
         .map(
           (answer) => `
-Question: ${answer.question}
-Your Answer: ${answer.userAnswer}
-Correct Answer: ${answer.correctAnswer}
-Subject: ${answer.courseName} - ${answer.materialName}
-`,
+            Question: ${answer.question}
+            Your Answer: ${answer.userAnswer}
+            Correct Answer: ${answer.correctAnswer}
+            Subject: ${answer.courseName} - ${answer.materialName}
+            `,
         )
         .join("\n");
 
@@ -114,7 +114,7 @@ ${wrongAnswersText}
       const result = await model.generateContent(prompt);
       const responseText = result.response.text();
 
-      // Extract JSON from the response
+      // extract JSON from the response
       const jsonMatch = responseText.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const parsedTopics = JSON.parse(jsonMatch[0]);
@@ -128,7 +128,6 @@ ${wrongAnswersText}
       console.error("Error processing wrong answers:", err);
       setError("Failed to process your learning data for recommendations");
 
-      // Fallback topics if AI processing fails
       setSearchTopics([
         {
           title: "General Study Resources",

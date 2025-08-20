@@ -14,8 +14,9 @@ export const useUser = () => {
   } = useQuery({
     queryKey: ["user", user?.id],
     queryFn: () => fetchUserDetails(user?.id || ""),
-    enabled: !!user?.id,
+    enabled: !!user?.id && !user, // Only fetch if we have an ID but no user data
     staleTime: Infinity,
+    retry: false, // Don't retry failed requests
   });
 
   useEffect(() => {
@@ -26,10 +27,16 @@ export const useUser = () => {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      dispatch(hydrateUser(JSON.parse(storedUser)));
+    if (storedUser && !user) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        dispatch(hydrateUser(parsedUser));
+      } catch (error) {
+        console.error("Failed to parse stored user:", error);
+        localStorage.removeItem("user");
+      }
     }
-  }, [dispatch]);
+  }, [dispatch, user]);
 
   useEffect(() => {
     if (user) {
@@ -39,5 +46,8 @@ export const useUser = () => {
     }
   }, [user]);
 
-  return { user, isLoading, error };
+  // Return loading state only if we don't have user data and we're not in the process of loading it
+  const isActuallyLoading = isLoading && !user && !localStorage.getItem("user");
+
+  return { user, isLoading: isActuallyLoading, error };
 };

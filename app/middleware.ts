@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
 
 const publicRoutes = ["/sign-in", "/sign-up", "/api/auth"];
 
@@ -8,43 +7,27 @@ const teacherRoutePrefix = "/teacher";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  console.log("Middleware: Checking path:", pathname);
+
   const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route),
   );
   if (isPublicRoute) {
+    console.log("Middleware: Public route, allowing access");
     return NextResponse.next();
   }
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
+  const token = request.cookies.get("token")?.value;
+  const userCookie = request.cookies.get("user")?.value;
 
-  if (!token) {
+  if (!token && !userCookie) {
+    console.log("Middleware: No authentication found, redirecting to sign-in");
     const url = new URL("/sign-in", request.url);
     url.searchParams.set("callbackUrl", encodeURI(request.url));
     return NextResponse.redirect(url);
   }
 
-  const userRole = token.role as string;
-  const isTeacher = userRole === "CLASS_TEACHER" || userRole === "ADMIN";
-  const isStudent = userRole === "STUDENT";
-
-  if (isTeacher) {
-    if (
-      !pathname.startsWith(teacherRoutePrefix) &&
-      !pathname.startsWith("/api")
-    ) {
-      return NextResponse.redirect(new URL("/teacher/dashboard", request.url));
-    }
-  }
-
-  if (isStudent) {
-    if (pathname.startsWith(teacherRoutePrefix)) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-  }
-
+  console.log("Middleware: Authentication found, allowing access");
   return NextResponse.next();
 }
 

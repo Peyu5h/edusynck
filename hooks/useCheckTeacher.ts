@@ -32,17 +32,22 @@ export function useCheckTeacher() {
         // Try localStorage if no user in Redux
         const storedUserString = localStorage.getItem("user");
         if (storedUserString) {
-          const storedUser = JSON.parse(storedUserString);
-          if (storedUser.role === "CLASS_TEACHER") {
-            dispatch(loginUser(storedUser));
-            setIsTeacher(true);
-            setIsLoading(false);
-            return;
-          } else {
-            setIsTeacher(false);
-            setIsLoading(false);
-            router.push("/");
-            return;
+          try {
+            const storedUser = JSON.parse(storedUserString);
+            if (storedUser.role === "CLASS_TEACHER") {
+              dispatch(loginUser(storedUser));
+              setIsTeacher(true);
+              setIsLoading(false);
+              return;
+            } else {
+              setIsTeacher(false);
+              setIsLoading(false);
+              router.push("/");
+              return;
+            }
+          } catch (error) {
+            console.error("Failed to parse stored user:", error);
+            localStorage.removeItem("user");
           }
         }
 
@@ -58,9 +63,14 @@ export function useCheckTeacher() {
 
         const token = cookies.token;
         if (!token) {
-          setIsTeacher(false);
-          setIsLoading(false);
-          router.push("/sign-in");
+          // Don't redirect immediately, wait a bit to see if user data gets restored
+          setTimeout(() => {
+            if (!localStorage.getItem("user")) {
+              setIsTeacher(false);
+              setIsLoading(false);
+              router.push("/sign-in");
+            }
+          }, 1000);
           return;
         }
 
@@ -91,8 +101,14 @@ export function useCheckTeacher() {
         }
       } catch (error) {
         console.error("Error checking teacher status:", error);
-        setIsTeacher(false);
-        router.push("/sign-in");
+        // Don't redirect immediately on error, wait a bit
+        setTimeout(() => {
+          if (!localStorage.getItem("user")) {
+            setIsTeacher(false);
+            setIsLoading(false);
+            router.push("/sign-in");
+          }
+        }, 1000);
       } finally {
         setIsLoading(false);
       }

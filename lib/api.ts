@@ -1,14 +1,25 @@
-import { API_URL } from "~/constants/config";
-
-// Helper function to get token from localStorage
 const getToken = (): string | null => {
   if (typeof window !== "undefined") {
-    return localStorage.getItem("token");
+    // Check localStorage first, then cookies as fallback
+    const localToken = localStorage.getItem("token");
+    if (localToken) {
+      return localToken;
+    }
+
+    // Fallback to cookies
+    const cookies = document.cookie.split(";");
+    const tokenCookie = cookies.find((cookie) =>
+      cookie.trim().startsWith("token="),
+    );
+    if (tokenCookie) {
+      return tokenCookie.split("=")[1];
+    }
   }
   return null;
 };
 
-// User API calls
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 export const getUserById = async (userId: string) => {
   try {
     const response = await fetch(`${API_URL}/user/${userId}`, {
@@ -27,7 +38,6 @@ export const getUserById = async (userId: string) => {
   }
 };
 
-// Roadmap API calls
 export const generateRoadmap = async (userId: string, title?: string) => {
   try {
     const response = await fetch(`${API_URL}/roadmap/generate/${userId}`, {

@@ -6,6 +6,7 @@ import { ThemeProvider } from "next-themes";
 import { ReduxProvider } from "~/store/ReduxProvider";
 import ReactQueryProvider from "~/components/ReactQueryProvider";
 import UserHydration from "~/store/slices/useUserHydration";
+import UserProvider from "~/components/auth/UserProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -54,6 +55,7 @@ export default function RootLayout({
               disableTransitionOnChange
             >
               <UserHydration />
+              <UserProvider />
               {children}
             </ThemeProvider>
             <Toaster />

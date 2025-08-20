@@ -44,6 +44,7 @@ export const useLogin = () => {
 
       setCookie("token", data.token, { path: "/" });
       setCookie("user", JSON.stringify(data.user), { path: "/" });
+      localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       dispatch(loginUser(data.user));
 
@@ -119,6 +120,8 @@ export const useLogout = () => {
 
         removeCookie("token", { path: "/" });
         removeCookie("user", { path: "/" });
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
 
         dispatch(logoutUser());
 

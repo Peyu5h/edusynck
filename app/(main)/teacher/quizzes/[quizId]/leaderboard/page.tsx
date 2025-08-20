@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -198,17 +198,21 @@ export default function TeacherQuizLeaderboardPage() {
       </div>
     );
   }
+  const router = useRouter();
 
   return (
     <div className="container mx-auto py-8">
-      <div className="mb-6">
-        <Link href={`/teacher/quizzes`} passHref>
-          <Button variant="ghost" className="mb-4 flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Quizzes
-          </Button>
-        </Link>
+      <div className="mb-4 mt-4">
+        <Button
+          variant="outline"
+          onClick={() => router.push("/teacher/quizzes")}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Quizzes
+        </Button>
+      </div>
 
+      <div className="mb-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-3xl font-bold">{quiz?.title} - Leaderboard</h1>
           <Button

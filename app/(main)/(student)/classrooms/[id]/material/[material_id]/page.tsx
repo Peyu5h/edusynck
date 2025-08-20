@@ -5,29 +5,12 @@ import { useEffect, useState } from "react";
 import { ClassroomBread } from "~/components/BreadCrump/ClassroomBread";
 import MaterialLoader from "~/components/Loaders/MaterialLoader";
 import MaterialCard from "~/components/MaterialCard";
+import { Material } from "~/lib/types";
 
 interface Course {
   id: string;
   name: string;
   googleClassroomId: string;
-}
-
-interface Material {
-  id: string;
-  title: string;
-  alternateLink: string;
-  files: {
-    id: string;
-    title: string;
-    alternateLink: string;
-    thumbnailUrl: string;
-    extension: string;
-  }[];
-  links: {
-    url: string;
-    title: string;
-    thumbnailUrl: string;
-  }[];
 }
 
 export default function MaterialPage() {
@@ -47,7 +30,7 @@ export default function MaterialPage() {
       if (!courseId || !materialId) return;
       setIsLoading(true);
       try {
-        // Fetch course
+        // courses
         const courseResponse = await fetch(
           `${backendUrl}/api/class/${courseId}`,
         );
@@ -57,7 +40,7 @@ export default function MaterialPage() {
         const courseData = await courseResponse.json();
         setCourse(courseData);
 
-        // Fetch materials
+        // materials
         const materialsResponse = await fetch(
           `${backendUrl}/api/class/${courseId}/course/${courseData.googleClassroomId}/materials`,
         );
@@ -66,7 +49,7 @@ export default function MaterialPage() {
         }
         const materialsData = await materialsResponse.json();
 
-        // Find the specific material
+        // specific material
         const specificMaterial = materialsData.find(
           (m: Material) => m.id === materialId,
         );
@@ -103,7 +86,7 @@ export default function MaterialPage() {
         <div className="mt-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {material.files.length > 0 &&
-              material.files.map((file) => (
+              material.files.map((file: any) => (
                 <MaterialCard
                   key={file.id}
                   material={file}

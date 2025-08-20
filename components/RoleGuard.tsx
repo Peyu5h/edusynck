@@ -19,8 +19,8 @@ export default function RoleGuard({
   const router = useRouter();
 
   useEffect(() => {
-    // If not loading and either there's an error or no user, redirect to sign-in
-    if (!isLoading && (error || !user)) {
+    // Only redirect if we're not loading and there's definitely no user
+    if (!isLoading && !user && !localStorage.getItem("user")) {
       router.push(redirectTo);
       return;
     }
@@ -43,13 +43,13 @@ export default function RoleGuard({
   }, [user, isLoading, error, allowedRoles, redirectTo, router]);
 
   // While loading, show a loading state
-  // if (isLoading) {
-  //   return (
-  //     <div className="flex h-screen items-center justify-center">
-  //       Loading...
-  //     </div>
-  //   );
-  // }
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
 
   // If there's an error or no user, don't render children
   if (error || !user) {

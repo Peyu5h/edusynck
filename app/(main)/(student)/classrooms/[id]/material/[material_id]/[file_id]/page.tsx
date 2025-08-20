@@ -18,7 +18,6 @@ const Page = () => {
   useEffect(() => {
     setIsSidebarExpanded(false);
 
-    // Fetch material name if we have material_id
     const fetchMaterialName = async () => {
       try {
         if (material_id) {
@@ -31,12 +30,11 @@ const Page = () => {
         }
       } catch (error) {
         console.error("Failed to fetch material name:", error);
-        // Set a default name if we fail to fetch from API
         if (material_id) {
-          // Try to extract meaningful information from material_id
+          // extract meaningful information from material_id
           const idParts = String(material_id).split("-");
           if (idParts.length > 1) {
-            // Use the last part of the ID which might contain more readable info
+            // last part of the ID
             setMaterialName(`Study Material ${idParts[idParts.length - 1]}`);
           } else {
             setMaterialName(`Study Material ${material_id.slice(0, 8)}`);

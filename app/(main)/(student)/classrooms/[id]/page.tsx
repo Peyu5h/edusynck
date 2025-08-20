@@ -10,29 +10,7 @@ import MaterialCard from "~/components/MaterialCard";
 import MaterialFolderCard from "~/components/MaterialFolderCard";
 import { sidebarExpandedAtom } from "~/context/atom";
 import { useUser } from "~/hooks/useUser";
-
-interface Course {
-  id: string;
-  name: string;
-  googleClassroomId: string;
-  classId: string;
-  professorName?: string;
-  professorProfilePicture?: string;
-}
-
-interface Material {
-  id: string;
-  title: string;
-  alternateLink: string;
-  files: {
-    id: string;
-    title: string;
-    alternateLink: string;
-    thumbnailUrl: string;
-    extension: string;
-  }[];
-  links: any[];
-}
+import { Course, Material } from "~/lib/types";
 
 const Page = () => {
   const { id } = useParams() || {};

@@ -1,23 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardFooter } from "~/components/ui/card";
 import { useUser } from "~/hooks/useUser";
 import axios from "axios";
-import { AxiosResponse } from "axios";
 import ChatInput from "~/components/ChatPage/Attachement/ChatInput";
 import Messages from "~/components/ChatPage/Messages";
 import SubjectCardLoader from "~/components/Loaders/SubjectCardLoader";
 import ChatScreenLoader from "~/components/Loaders/ChatScreenLoader";
 import { subscribeToClassChat } from "~/lib/pusher-client";
-
-interface Message {
-  id: string;
-  sender: { id: string; name: string };
-  content: string;
-  files?: any[];
-  createdAt: string;
-}
+import { Message } from "~/lib/types";
 
 export default function ChatsPage() {
   const [messages, setMessages] = useState<any[]>([]);
