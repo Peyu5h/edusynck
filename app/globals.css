@@ -3,6 +3,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent layout shifts */
+@layer utilities {
+  .prevent-layout-shift {
+    contain: layout style;
+  }
+
+  .image-container {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .image-container img {
+    transition: opacity 0.2s ease-in-out;
+  }
+}
+
 @font-face {
   font-family: "Robson Bold";
   src: url("/fonts/robson-bold.ttf") format("truetype");

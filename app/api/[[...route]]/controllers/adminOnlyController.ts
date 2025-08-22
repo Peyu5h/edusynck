@@ -238,59 +238,114 @@ export const getImage = async (c: Context) => {
   const thumbnailUrl = c.req.query("thumbnailUrl");
 
   if (!thumbnailUrl) {
+    console.error("getImage: Thumbnail URL is required");
     return c.json({ error: "Thumbnail URL is required" }, 400);
   }
 
+  console.log(`getImage: Fetching thumbnail from ${thumbnailUrl}`);
+
   try {
+    // Check cache first
     const cachedImage = imageCache.get(thumbnailUrl);
     if (cachedImage) {
+      console.log(`getImage: Serving cached image for ${thumbnailUrl}`);
       c.header("Content-Type", (cachedImage as { mimeType: string }).mimeType);
+      c.header("Cache-Control", "public, max-age=3600");
       return c.body((cachedImage as { data: any }).data);
     }
 
     const oAuth2Client = c.get("googleAuth");
     if (!oAuth2Client) {
+      console.error("getImage: OAuth2 client not found");
       throw new Error("OAuth2 client not found");
     }
 
+    // Check and refresh token if needed
     if (oAuth2Client.isTokenExpiring()) {
-      await oAuth2Client.refreshAccessToken();
+      console.log("getImage: Token expiring, refreshing...");
+      try {
+        await oAuth2Client.refreshAccessToken();
+        console.log("getImage: Token refreshed successfully");
+      } catch (refreshError) {
+        console.error("getImage: Failed to refresh token:", refreshError);
+        throw new Error("Failed to refresh authentication token");
+      }
     }
 
+    console.log(
+      `getImage: Making request to Google Drive API for ${thumbnailUrl}`,
+    );
     const response = await fetch(thumbnailUrl, {
       headers: {
         Authorization: `Bearer ${oAuth2Client.credentials.access_token}`,
+        "User-Agent": "Academia-App/1.0",
       },
+      timeout: 10000, // 10 second timeout
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      console.error(
+        `getImage: HTTP error ${response.status} ${response.statusText} for ${thumbnailUrl}`,
+      );
+      throw new Error(
+        `HTTP error! status: ${response.status} - ${response.statusText}`,
+      );
     }
 
     const contentType = response.headers.get("content-type");
-    const imageBuffer = await response.buffer();
+    if (!contentType || !contentType.startsWith("image/")) {
+      console.error(
+        `getImage: Invalid content type ${contentType} for ${thumbnailUrl}`,
+      );
+      throw new Error(`Invalid content type: ${contentType}`);
+    }
 
+    const imageBuffer = await response.buffer();
+    console.log(
+      `getImage: Successfully fetched image (${imageBuffer.length} bytes) for ${thumbnailUrl}`,
+    );
+
+    // Cache the image
     imageCache.set(thumbnailUrl, {
       mimeType: contentType,
       data: imageBuffer,
     });
 
+    // Set response headers
     c.header("Access-Control-Allow-Origin", "*");
     c.header("Access-Control-Allow-Methods", "GET, OPTIONS");
     c.header(
       "Access-Control-Allow-Headers",
       "Origin, X-Requested-With, Content-Type, Accept, Authorization",
     );
-    c.header("Content-Type", contentType!);
+    c.header("Content-Type", contentType);
+    c.header("Cache-Control", "public, max-age=3600");
+
     return c.body(imageBuffer as unknown as ArrayBuffer);
   } catch (error) {
-    console.error("Error fetching image:", error);
+    console.error(
+      `getImage: Error fetching image from ${thumbnailUrl}:`,
+      error,
+    );
+
+    // Return a more detailed error response
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    const statusCode = errorMessage.includes("HTTP error! status: 404")
+      ? 404
+      : errorMessage.includes("OAuth2") ||
+          errorMessage.includes("authentication")
+        ? 401
+        : 500;
+
     return c.json(
       {
         error: "Failed to fetch image",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: errorMessage,
+        thumbnailUrl: thumbnailUrl,
+        timestamp: new Date().toISOString(),
       },
-      500,
+      statusCode,
     );
   }
 };

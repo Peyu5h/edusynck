@@ -48,16 +48,14 @@ export default function AssignmentPage() {
   }, [setIsSidebarExpanded, id]);
 
   return (
-    <div>
-      <div className="flex h-[75vh] w-full cursor-pointer justify-between rounded-lg bg-bground2 p-4">
-        <div className="w-full">
-          <MaterialView
-            uri={fileUrl}
-            fileType={fileType}
-            materialName={assignmentName}
-            courseId={courseId}
-          />
-        </div>
+    <div className="flex h-screen w-full items-center justify-center bg-background p-2">
+      <div className="h-full w-full max-w-[1800px] rounded-lg shadow-lg">
+        <MaterialView
+          uri={fileUrl}
+          fileType={fileType}
+          materialName={assignmentName}
+          courseId={courseId}
+        />
       </div>
     </div>
   );

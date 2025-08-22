@@ -20,10 +20,6 @@ import MarkdownRenderer from "./MarkdownRender";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import YouTubeVideos from "./YouTubeVideos";
 import QuizMe from "./QuizMe";
-import { ny } from "~/lib/utils";
-import { HiSparkles } from "react-icons/hi2";
-import { BsStars } from "react-icons/bs";
-import { FaUser } from "react-icons/fa";
 import { Message } from "~/lib/types";
 import EmptyScreen, { ChatItem } from "./ChatScreen";
 import { useToast } from "./ui/use-toast";
@@ -70,6 +66,25 @@ const MaterialView: React.FC<{
   const [isGenerating, setIsGenerating] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showDocument, setShowDocument] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === "f" || e.key === "F") {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          setIsFullscreen(!isFullscreen);
+        }
+      }
+      if (e.key === "Escape") {
+        setIsFullscreen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [isFullscreen]);
 
   const extractText = useCallback(async (url: string, type: string) => {
     setIsExtracting(true);
@@ -118,8 +133,6 @@ const MaterialView: React.FC<{
       extractText(uri, fileType);
     }
   }, [uri, fileType, extractText]);
-
-  console.log(fileType);
 
   const extractTextFromPDF = async (url: string): Promise<string> => {
     try {
@@ -349,8 +362,15 @@ Search string:`;
     if (!chatPrompt.trim()) return;
 
     setIsGenerating(true);
-    const newMessage: Message = { role: "user", content: chatPrompt };
-    setChatMessages((prev) => [...prev, newMessage]);
+    const newMessage: Message = {
+      id: Date.now().toFixed(0),
+      role: "user",
+      content: chatPrompt,
+      sender: { id: "user", name: "You" },
+      files: [],
+      createdAt: new Date().toISOString(),
+    };
+    setChatMessages((prev: any[]) => [...prev, newMessage]);
     setChatPrompt("");
 
     try {
@@ -371,14 +391,14 @@ Search string:`;
       let fullResponse = "";
       const responseMessageId = Date.now();
 
-      setChatMessages((prev) => [
+      setChatMessages((prev: any[]) => [
         ...prev,
         { role: "assistant", content: "", id: responseMessageId },
       ]);
 
       for await (const chunk of result.stream) {
         fullResponse += chunk.text();
-        setChatMessages((prev) =>
+        setChatMessages((prev: any[]) =>
           prev.map((msg) =>
             "id" in msg && msg.id === responseMessageId
               ? { ...msg, content: fullResponse }
@@ -388,7 +408,7 @@ Search string:`;
       }
     } catch (error) {
       console.error("Error generating chat response:", error);
-      setChatMessages((prev) => [
+      setChatMessages((prev: any[]) => [
         ...prev,
         {
           role: "assistant",
@@ -551,53 +571,119 @@ Return only the numbers of relevant questions, separated by commas (e.g., "1,4,7
   };
 
   return (
-    <div className="flex h-[76vh] w-full flex-col gap-y-4 overflow-y-hidden md:flex-row md:gap-x-4 md:gap-y-0">
+    <div className="flex h-[calc(100vh-80px)] w-full flex-col gap-2 md:flex-row md:gap-4">
+      {/* Document Viewer Section - Now takes more space */}
       <div
-        className={`scrollbar h-full overflow-x-auto md:w-1/3 ${showDocument ? "block" : "hidden sm:block"}`}
+        className={`relative h-full overflow-hidden rounded-lg border bg-card shadow-sm ${
+          showDocument ? "block" : "hidden sm:block"
+        } ${isFullscreen ? "md:w-full" : "md:w-3/5"}`}
       >
-        {doc ? (
-          doc.length > 0 ? (
-            <DocViewer
-              prefetchMethod="GET"
-              style={{ borderRadius: "10px", height: "100%" }}
-              documents={doc}
-              config={{
-                header: {
-                  disableHeader: true,
-                  disableFileName: false,
-                  retainURLParams: false,
-                },
-                loadingRenderer: {
-                  overrideComponent: () => (
-                    <div className="flex h-full w-full animate-pulse items-center justify-center bg-gray-100">
-                      <Loader2 className="h-8 w-8 animate-spin text-gray-700" />
-                    </div>
-                  ),
-                },
-              }}
-              pluginRenderers={DocViewerRenderers}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center bg-secondary">
-              <div className="flex flex-col items-center space-y-4">
-                <Loader2 className="h-12 w-12 animate-spin text-thintext" />
+        {/* Document Controls */}
+        <div className="absolute right-2 top-2 z-10 flex gap-2">
+          <Button
+            onClick={() => setIsFullscreen(!isFullscreen)}
+            className="h-8 w-8 bg-black/50 p-0 text-white transition-all duration-200 hover:bg-black/70"
+            title={
+              isFullscreen ? "Exit Fullscreen (Esc)" : "Fullscreen (Ctrl+F)"
+            }
+          >
+            {isFullscreen ? (
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                />
+              </svg>
+            )}
+          </Button>
+        </div>
+
+        {/* Document Content */}
+        <div className="scrollbar h-full w-full overflow-auto">
+          {doc ? (
+            doc.length > 0 ? (
+              <DocViewer
+                className="scrollbar overflow-auto"
+                prefetchMethod="GET"
+                style={{
+                  borderRadius: "8px",
+                  height: "100%",
+                  width: "100%",
+                  overflow: "auto",
+                }}
+                documents={doc}
+                config={{
+                  header: {
+                    disableHeader: false,
+                    disableFileName: false,
+                    retainURLParams: false,
+                  },
+                  loadingRenderer: {
+                    overrideComponent: () => (
+                      <div className="flex h-full w-full items-center justify-center bg-muted">
+                        <div className="flex flex-col items-center space-y-4">
+                          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                          <p className="text-sm text-muted-foreground">
+                            Loading document...
+                          </p>
+                        </div>
+                      </div>
+                    ),
+                  },
+                  csvDelimiter: ",",
+                  pdfZoom: {
+                    defaultZoom: 1.2,
+                    zoomJump: 0.3,
+                  },
+                }}
+                pluginRenderers={DocViewerRenderers}
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center bg-muted">
+                <div className="flex flex-col items-center space-y-4">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">
+                    Preparing document...
+                  </p>
+                </div>
               </div>
+            )
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center bg-muted">
+              <div className="mb-4 h-32 w-32 animate-pulse rounded-lg bg-muted-foreground/20"></div>
+              <p className="text-muted-foreground">No document loaded</p>
             </div>
-          )
-        ) : (
-          <div className="flex h-full flex-col items-center justify-center bg-gray-100">
-            <div className="mb-4 h-32 w-32 animate-pulse rounded-lg bg-gray-300"></div>
-            <p className="text-gray-500">No document loaded</p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+      {/* Tabs Section - Adjusts based on fullscreen mode */}
       <div
-        className={`h-full md:w-2/3 ${showDocument ? "hidden sm:block" : "block"}`}
+        className={`h-full rounded-lg border bg-card shadow-sm ${
+          showDocument ? "hidden sm:block" : "block"
+        } ${isFullscreen ? "hidden" : "md:w-2/5"}`}
       >
-        <Tabs
-          defaultValue="chat"
-          className="flex h-full w-full flex-col p-4 pt-0"
-        >
+        <Tabs defaultValue="chat" className="flex h-full w-full flex-col p-4">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="chat">Chat</TabsTrigger>
             <TabsTrigger value="examNotes" disabled={!extractedText}>
@@ -673,7 +759,7 @@ Return only the numbers of relevant questions, separated by commas (e.g., "1,4,7
               <div className="relative flex-grow">
                 <div
                   ref={examNotesRef}
-                  className="scrollbar mb-4 h-[calc(100vh-300px)] flex-grow overflow-y-auto rounded bg-bground3 p-4 text-foreground"
+                  className="scrollbar mb-4 h-[calc(100vh-300px)] flex-grow overflow-y-auto rounded p-4 text-foreground"
                 >
                   {response ? (
                     <MarkdownRenderer content={response} />
@@ -716,10 +802,15 @@ Return only the numbers of relevant questions, separated by commas (e.g., "1,4,7
             className="scrollbar flex-grow overflow-hidden"
           >
             <div className="scrollbar flex h-full flex-col">
-              <h2 className="mb-4 text-xl font-bold">Related YouTube Videos</h2>
-              <p className="mb-4 text-sm text-gray-600">
-                Search string: {searchString}
-              </p>
+              <div className="mb-6 space-y-2">
+                <h2 className="text-2xl font-light text-foreground">
+                  Related Videos
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Educational content based on:{" "}
+                  <span className="font-medium">{searchString}</span>
+                </p>
+              </div>
               <div className="scrollbar flex-grow overflow-y-auto">
                 <YouTubeVideos keywords={[searchString]} />
               </div>
@@ -729,15 +820,11 @@ Return only the numbers of relevant questions, separated by commas (e.g., "1,4,7
             value="quizMe"
             className="scrollbar flex-grow overflow-hidden"
           >
-            <div className="scrollbar flex h-full flex-col">
-              <div className="scrollbar flex-grow overflow-y-auto">
-                <QuizMe
-                  extractedText={extractedText}
-                  materialName={materialName}
-                  courseId={courseId}
-                />
-              </div>
-            </div>
+            <QuizMe
+              extractedText={extractedText}
+              materialName={materialName}
+              courseId={courseId}
+            />
           </TabsContent>
 
           {/* New Tab for Previous Year Questions */}
@@ -756,14 +843,40 @@ Return only the numbers of relevant questions, separated by commas (e.g., "1,4,7
           </TabsContent>
         </Tabs>
       </div>
-      <div className="fixed bottom-4 right-4 sm:hidden">
+      {/* Mobile Toggle Button */}
+      <div className="fixed bottom-4 right-4 z-20 sm:hidden">
         <Button
           onClick={() => setShowDocument(!showDocument)}
-          className="bg-bground3 text-white hover:bg-zinc-800"
+          className="bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
         >
-          {showDocument ? "Show Tabs" : "Show Document"}
+          {showDocument ? "Show Tools" : "Show Document"}
         </Button>
       </div>
+
+      {/* Fullscreen Toggle for Mobile */}
+      {!isFullscreen && (
+        <div className="fixed bottom-4 left-4 z-20 sm:hidden">
+          <Button
+            onClick={() => setIsFullscreen(true)}
+            className="bg-secondary text-secondary-foreground shadow-lg hover:bg-secondary/90"
+            title="Fullscreen Document"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+              />
+            </svg>
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

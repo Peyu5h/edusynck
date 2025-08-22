@@ -75,33 +75,84 @@ const YouTubeVideos: React.FC<YouTubeVideosProps> = ({ keywords }) => {
     }
   }, [keywords]);
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="overflow-hidden rounded-xl border bg-card shadow-sm"
+            >
+              <div className="aspect-video animate-pulse bg-muted"></div>
+              <div className="space-y-3 p-4">
+                <div className="h-5 w-full animate-pulse rounded bg-muted"></div>
+                <div className="h-4 w-3/4 animate-pulse rounded bg-muted"></div>
+                <div className="flex items-center justify-between">
+                  <div className="h-4 w-20 animate-pulse rounded bg-muted"></div>
+                  <div className="h-8 w-24 animate-pulse rounded bg-muted"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-6 text-center">
+        <p className="font-semibold text-destructive">Error: {error}</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Keywords: {keywords.join(", ")}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {loading && (
-        <div className="flex justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      )}
-      {error && (
-        <div className="bg-red-100 text-red-700 rounded-lg p-4">
-          <p className="font-semibold">Error: {error}</p>
-          <p>Keywords: {keywords.join(", ")}</p>
-        </div>
-      )}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {videos.map((video) => (
-          <div key={video.id} className="overflow-hidden rounded-lg shadow-lg">
-            <div className="relative pb-[56.25%]">
-              <iframe
-                src={`https://www.youtube.com/embed/${video.id}`}
-                title={video.title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                className="absolute left-0 top-0 h-full w-full"
+          <div
+            key={video.id}
+            className="group overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:shadow-md"
+          >
+            <div className="relative aspect-video cursor-pointer overflow-hidden">
+              <img
+                src={video.thumbnail}
+                alt={video.title}
+                className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                onClick={() =>
+                  window.open(
+                    `https://www.youtube.com/watch?v=${video.id}`,
+                    "_blank",
+                  )
+                }
               />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover:opacity-100">
+                <div className="bg-red-600 rounded-full p-3 text-white shadow-lg">
+                  <svg
+                    className="h-6 w-6"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+              </div>
             </div>
             <div className="p-4">
-              <h3 className="mb-2 line-clamp-2 text-lg font-semibold">
+              <h3
+                className="mb-3 line-clamp-2 cursor-pointer text-base font-semibold text-foreground transition-colors hover:text-primary"
+                onClick={() =>
+                  window.open(
+                    `https://www.youtube.com/watch?v=${video.id}`,
+                    "_blank",
+                  )
+                }
+              >
                 {video.title}
               </h3>
               <Button
@@ -113,10 +164,10 @@ const YouTubeVideos: React.FC<YouTubeVideosProps> = ({ keywords }) => {
                     "_blank",
                   )
                 }
-                className="flex items-center"
+                className="w-full"
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
-                Open in YouTube
+                Watch Video
               </Button>
             </div>
           </div>

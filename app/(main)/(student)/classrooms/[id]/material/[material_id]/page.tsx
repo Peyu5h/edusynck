@@ -87,24 +87,30 @@ export default function MaterialPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {material.files.length > 0 &&
               material.files.map((file: any) => (
-                <MaterialCard
-                  key={file.id}
-                  material={file}
-                  type="file"
-                  title={material.title}
-                />
+                <div key={file.id} className="min-h-[180px]">
+                  <MaterialCard
+                    material={file}
+                    type="file"
+                    title={material.title}
+                  />
+                </div>
               ))}
             {material.links.length > 0 &&
               material.links.map((link, index) => (
-                <MaterialCard
-                  key={index}
-                  material={link}
-                  type="link"
-                  title={material.title}
-                />
+                <div key={index} className="min-h-[180px]">
+                  <MaterialCard
+                    material={link}
+                    type="link"
+                    title={material.title}
+                  />
+                </div>
               ))}
             {material.files.length === 0 && material.links.length === 0 && (
-              <p>No files or links available for this material.</p>
+              <div className="col-span-full flex items-center justify-center py-12">
+                <p className="text-lg text-muted-foreground">
+                  No files or links available for this material.
+                </p>
+              </div>
             )}
           </div>
         </div>

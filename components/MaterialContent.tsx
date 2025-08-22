@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Badge from "./Badge";
@@ -25,6 +25,14 @@ interface MaterialContentProps {
 
 const MaterialContent: React.FC<MaterialContentProps> = ({ material }) => {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+
+  const handleImageError = (fileId: string) => {
+    console.warn(
+      `Failed to load thumbnail for file ${fileId}, falling back to default`,
+    );
+    setImageErrors((prev) => new Set(prev).add(fileId));
+  };
 
   return (
     <div>
@@ -36,11 +44,16 @@ const MaterialContent: React.FC<MaterialContentProps> = ({ material }) => {
           material.files.map((file) => (
             <div key={file.id} className="rounded-lg border p-4">
               <Image
-                src={`${backendUrl}/api/admin/image?thumbnailUrl=${file.thumbnailUrl}`}
+                src={
+                  imageErrors.has(file.id)
+                    ? "https://res.cloudinary.com/dkysrpdi6/image/upload/v1723574586/image_lpepb4.png"
+                    : `${backendUrl}/api/admin/image?thumbnailUrl=${encodeURIComponent(file.thumbnailUrl)}`
+                }
                 alt={file.title}
                 width={200}
                 height={200}
                 className="mb-2 rounded-lg"
+                onError={() => handleImageError(file.id)}
               />
               <h2 className="text-lg font-semibold">{file.title}</h2>
               <p>{file.title}</p>

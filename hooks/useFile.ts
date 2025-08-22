@@ -25,10 +25,18 @@ function getSimpleFileType(mimeType: string | null): string {
 export function useFile(id: string | string[] | undefined) {
   const [fileUrl, setFileUrl] = useState<string>("");
   const [fileType, setFileType] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchFile = async () => {
-      if (!id) return;
+      if (!id) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
 
       const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/file/${id}`;
 
@@ -39,15 +47,21 @@ export function useFile(id: string | string[] | undefined) {
           const contentType = response.headers.get("Content-Type");
           setFileType(getSimpleFileType(contentType));
         } else {
-          console.error("Failed to fetch file information");
+          const errorMsg = "Failed to fetch file information";
+          console.error(errorMsg);
+          setError(errorMsg);
         }
       } catch (error) {
-        console.error("Error fetching file:", error);
+        const errorMsg = "Error fetching file";
+        console.error(errorMsg, error);
+        setError(errorMsg);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchFile();
   }, [id]);
 
-  return { fileUrl, fileType };
+  return { fileUrl, fileType, isLoading, error };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import React from "react";
+import React, { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { IoIosArrowRoundForward } from "react-icons/io";
@@ -32,6 +32,8 @@ const MaterialCard: React.FC<MaterialCardProps> = ({
   title,
 }) => {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const [imageError, setImageError] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -54,10 +56,15 @@ const MaterialCard: React.FC<MaterialCardProps> = ({
   };
 
   const getThumbnailUrl = () => {
+    // If there was an error loading the image, return fallback immediately
+    if (imageError) {
+      return "https://res.cloudinary.com/dkysrpdi6/image/upload/v1723574586/image_lpepb4.png";
+    }
+
     if (type === "file") {
       const file = material as FileProps;
       return file.thumbnailUrl
-        ? `${backendUrl}/api/admin/image?thumbnailUrl=${file.thumbnailUrl}`
+        ? `${backendUrl}/api/admin/image?thumbnailUrl=${encodeURIComponent(file.thumbnailUrl)}`
         : "https://res.cloudinary.com/dkysrpdi6/image/upload/v1723574586/image_lpepb4.png";
     } else {
       const link = material as LinkProps;
@@ -66,6 +73,16 @@ const MaterialCard: React.FC<MaterialCardProps> = ({
         "https://res.cloudinary.com/dkysrpdi6/image/upload/v1723574586/image_lpepb4.png"
       );
     }
+  };
+
+  const handleImageError = () => {
+    console.warn("Failed to load thumbnail image, falling back to default");
+    setImageError(true);
+    setIsImageLoaded(true);
+  };
+
+  const handleImageLoad = () => {
+    setIsImageLoaded(true);
   };
 
   const getLink = () => {
@@ -119,12 +136,21 @@ const MaterialCard: React.FC<MaterialCardProps> = ({
         <div className="flex p-4">
           <div className="thumbnail-container relative h-28 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-white">
             <div className="absolute inset-0 flex items-center justify-center">
+              {!isImageLoaded && (
+                <div className="h-full w-full animate-pulse rounded bg-gray-200"></div>
+              )}
               <Image
                 src={getThumbnailUrl()}
                 alt={getTitle()}
                 width={80}
                 height={112}
-                className="max-h-full max-w-full object-contain"
+                className={`max-h-full max-w-full object-contain transition-opacity duration-200 ${
+                  isImageLoaded ? "opacity-100" : "opacity-0"
+                }`}
+                onError={handleImageError}
+                onLoad={handleImageLoad}
+                unoptimized={imageError}
+                priority={false}
               />
             </div>
           </div>

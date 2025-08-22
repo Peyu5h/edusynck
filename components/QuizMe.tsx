@@ -244,9 +244,9 @@ const QuizMe: React.FC<{
   };
 
   return (
-    <div className="scrollbar mr-2 space-y-6 rounded-lg bg-bground3 p-4 text-gray-200">
+    <div className="scrollbar mr-2 h-full space-y-6 overflow-auto rounded-lg bg-bground3 p-4 text-gray-200">
       {isLoading ? (
-        <div className="flex h-full min-h-[400px] flex-col items-center justify-center space-y-4 py-12">
+        <div className="flex h-full flex-col items-center justify-center space-y-4 py-12">
           <Loader2 className="text-orange-400 h-12 w-12 animate-spin" />
           <p className="text-lg font-medium">Generating quiz...</p>
         </div>

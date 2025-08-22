@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import UserButton from "./UserButton/UserButton";
-import Notification from "./Notification";
 import { usePathname } from "next/navigation";
 import { useUser } from "~/hooks/useUser";
 import MobileHamburger from "./MobileHamburger";
@@ -15,8 +13,10 @@ const Header = () => {
   const [greeting, setGreeting] = useState("Good morning");
 
   useEffect(() => {
-    setIsAssignment(path.includes("assignments/"));
-    setIsMaterial(path.includes("material/"));
+    setIsAssignment(
+      path.includes("assignments/") && path.split("/").length > 4,
+    );
+    setIsMaterial(path.includes("material/") && path.split("/").length > 5);
     const currentHour = new Date().getHours();
     setGreeting(
       currentHour >= 12 && currentHour < 18

@@ -21,8 +21,8 @@ const EmptyScreen = ({
   ];
 
   return (
-    <div className="mx-auto bg-background px-8 text-foreground">
-      <div className="-mt-10 flex w-full flex-col items-center justify-center rounded-md p-8">
+    <div className="mx-auto h-full overflow-x-hidden rounded-lg bg-background px-8 text-foreground">
+      <div className="flex w-full flex-col items-center justify-center rounded-md p-8">
         <span className="mb-8 flex items-center text-2xl"></span>
         <p className="mb-4 text-center leading-normal text-muted-foreground opacity-70">
           Ask questions about the document and get AI-powered responses.
@@ -55,7 +55,7 @@ export default EmptyScreen;
 
 export const ChatItem: React.FC<{ message: Message }> = ({ message }) => {
   return (
-    <div className="group relative flex items-start bg-background px-8 py-5">
+    <div className="group relative flex h-full items-start rounded-lg bg-background px-8 py-5">
       <div className="-mt-1 flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-md border bg-background">
         {message.role === "user" ? <FaUser /> : <BsStars />}
       </div>

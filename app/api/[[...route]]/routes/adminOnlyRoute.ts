@@ -18,6 +18,15 @@ adminRoutes.get("/auth", auth);
 adminRoutes.get("/file/:fileId", googleAuthMiddleware, getFile);
 adminRoutes.get("/convert2PDF", extractTextFromPptxUrl);
 adminRoutes.get("/image", googleAuthMiddleware, getImage);
+adminRoutes.options("/image", (c) => {
+  c.header("Access-Control-Allow-Origin", "*");
+  c.header("Access-Control-Allow-Methods", "GET, OPTIONS");
+  c.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization",
+  );
+  return c.text("", 200);
+});
 adminRoutes.get(
   "/class/:classId/assignments",
   googleAuthMiddleware,

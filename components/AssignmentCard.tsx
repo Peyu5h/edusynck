@@ -1,5 +1,5 @@
 import Image from "next/image";
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "./ui/button";
 import Badge from "./Badge";
 import Link from "next/link";
@@ -39,7 +39,21 @@ function formatCourseName(name: string): string {
 
 const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment }) => {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const [imageError, setImageError] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
   console.log(assignment);
+
+  const handleImageError = () => {
+    console.warn(
+      "Failed to load assignment thumbnail, falling back to default",
+    );
+    setImageError(true);
+    setIsImageLoaded(true);
+  };
+
+  const handleImageLoad = () => {
+    setIsImageLoaded(true);
+  };
   const formatDescription = (
     description: string | undefined | null,
     maxLength = 100,
@@ -101,21 +115,33 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment }) => {
         <div className="left flex h-full gap-x-4">
           <div className="thumbnail hidden h-full w-[140px] overflow-hidden p-2 sm:block">
             <div className="relative h-full w-full rounded-lg bg-white">
-              {material?.thumbnailUrl ? (
+              {!isImageLoaded && (
+                <div className="absolute inset-0 animate-pulse rounded-lg bg-gray-200"></div>
+              )}
+              {material?.thumbnailUrl && !imageError ? (
                 <Image
-                  src={`${backendUrl}/api/admin/image?thumbnailUrl=${material.thumbnailUrl}`}
+                  src={`${backendUrl}/api/admin/image?thumbnailUrl=${encodeURIComponent(material.thumbnailUrl)}`}
                   alt="thumbnail"
-                  className="rounded-lg object-cover"
+                  className={`rounded-lg object-cover transition-opacity duration-200 ${
+                    isImageLoaded ? "opacity-100" : "opacity-0"
+                  }`}
                   fill
                   sizes="180px"
+                  onError={handleImageError}
+                  onLoad={handleImageLoad}
+                  priority={false}
                 />
               ) : (
                 <Image
                   src={`https://res.cloudinary.com/dkysrpdi6/image/upload/v1723574586/image_lpepb4.png`}
                   alt="thumbnail"
-                  className="rounded-lg object-cover"
+                  className={`rounded-lg object-cover transition-opacity duration-200 ${
+                    isImageLoaded ? "opacity-100" : "opacity-0"
+                  }`}
                   fill
                   sizes="180px"
+                  onLoad={handleImageLoad}
+                  priority={false}
                 />
               )}
             </div>
