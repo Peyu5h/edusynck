@@ -39,7 +39,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
   }
 
   return (
-    <div className="relative flex h-screen w-full overflow-y-hidden bg-bground1 bg-bgImage bg-cover bg-center bg-no-repeat p-2.5 font-khula text-text">
+    <div className="relative flex h-screen w-full overflow-x-hidden overflow-y-hidden bg-bground1 bg-bgImage bg-cover bg-center bg-no-repeat p-2.5 font-khula text-text">
       <div className="sticky top-0 hidden h-screen md:block">
         <TeacherSideNav />
       </div>

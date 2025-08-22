@@ -20,7 +20,13 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
   const userCookie = request.cookies.get("user")?.value;
 
+  // Allow access if either token or user cookie exists
   if (!token && !userCookie) {
+    // Don't redirect immediately for API routes or static assets
+    if (pathname.startsWith("/api/") || pathname.includes("_next")) {
+      return NextResponse.next();
+    }
+
     console.log("Middleware: No authentication found, redirecting to sign-in");
     const url = new URL("/sign-in", request.url);
     url.searchParams.set("callbackUrl", encodeURI(request.url));

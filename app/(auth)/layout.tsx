@@ -12,7 +12,7 @@ export default async function Authlayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative flex h-screen w-full items-center justify-center bg-bgImage bg-cover bg-center bg-no-repeat p-36">
+    <div className="relative flex h-screen w-full items-center justify-center overflow-x-hidden overflow-y-hidden bg-bgImage bg-cover bg-center bg-no-repeat p-36">
       <div
         style={{ zIndex: 2 }}
         className="absolute inset-0 bg-black opacity-20"

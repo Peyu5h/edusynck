@@ -75,7 +75,7 @@ export default function EditQuizPage() {
       description: "",
       courseId: "",
       questions: [],
-      status: "DRAFT",
+      status: "ACTIVE",
       startTime: "",
       endTime: "",
       duration: "",
@@ -161,7 +161,7 @@ export default function EditQuizPage() {
           correctAnswer: q.correctAnswer,
           points: q.points || 1,
         })),
-        status: quiz.status || "DRAFT",
+        status: quiz.status || "ACTIVE",
         startTime: quiz.startTime
           ? new Date(quiz.startTime).toISOString().substr(0, 16)
           : "",
@@ -306,9 +306,9 @@ export default function EditQuizPage() {
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="DRAFT">Draft</SelectItem>
                     <SelectItem value="ACTIVE">Active</SelectItem>
                     <SelectItem value="COMPLETED">Completed</SelectItem>
+                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

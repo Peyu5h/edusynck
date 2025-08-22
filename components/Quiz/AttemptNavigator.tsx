@@ -38,7 +38,9 @@ export default function AttemptNavigator({
               key={q.id}
               variant={index === currentIndex ? "default" : "outline"}
               className={`h-10 w-10 p-0 ${
-                answers[q.id] !== undefined ? "border-green-500" : ""
+                answers[q.id] !== undefined
+                  ? "border-green-500 text-green-800 bg-greenBg hover:bg-greenBg/80"
+                  : ""
               }`}
               onClick={() => onNavigate(index)}
             >

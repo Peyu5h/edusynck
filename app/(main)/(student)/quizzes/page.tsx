@@ -32,20 +32,61 @@ export default function StudentQuizzesPage() {
     : [];
 
   // Use React Query hooks for data fetching
-  const { data: activeQuizzesData, isLoading: isLoadingQuizzes } =
-    useActiveQuizzes(selectedCourseId || undefined);
-  const { data: completedAttemptsData, isLoading: isLoadingAttempts } =
-    useStudentAttempts(user?.id || "");
+  // Fetch all active quizzes (not filtered by course initially)
+  const {
+    data: activeQuizzesData,
+    isLoading: isLoadingQuizzes,
+    isFetching: isFetchingQuizzes,
+    refetch: refetchQuizzes,
+  } = useActiveQuizzes(undefined, user?.id); // Pass userId to get attempt status
+
+  const {
+    data: completedAttemptsData,
+    isLoading: isLoadingAttempts,
+    isFetching: isFetchingAttempts,
+    refetch: refetchAttempts,
+  } = useStudentAttempts(user?.id || "");
 
   const activeQuizzes = activeQuizzesData?.data || activeQuizzesData || [];
   const completedAttempts =
     completedAttemptsData?.data || completedAttemptsData || [];
 
-  useEffect(() => {
-    if (courses.length > 0 && !selectedCourseId) {
-      setSelectedCourseId(courses[0].id);
+  // Debug logging
+  console.log("Student Quizzes Debug:", {
+    user: user?.id,
+    selectedCourseId,
+    courses: courses.map((c: any) => ({ id: c.id, name: c.name })),
+    activeQuizzesData,
+    activeQuizzes: activeQuizzes.length,
+    activeQuizzesDetails: activeQuizzes.map((q: any) => ({
+      id: q.id,
+      title: q.title,
+      courseId: q.courseId,
+      courseName: q.course?.name,
+      status: q.status,
+    })),
+  });
+
+  // Combined loading state
+  const isLoading = isLoadingQuizzes || isLoadingAttempts;
+  const isFetching = isFetchingQuizzes || isFetchingAttempts;
+
+  // Refresh function to refetch both data sources
+  const handleRefresh = async () => {
+    try {
+      await Promise.all([refetchQuizzes(), refetchAttempts()]);
+      toast.success("Data refreshed successfully!");
+    } catch (error) {
+      toast.error("Failed to refresh data");
     }
-  }, [courses]);
+  };
+
+  // Don't auto-select a course - let students see all their quizzes by default
+  // useEffect(() => {
+  //   if (courses.length > 0 && !selectedCourseId) {
+  //     setSelectedCourseId(courses[0].id);
+  //   }
+  // }, [courses]);
 
   useEffect(() => {
     if (user?.id) {
@@ -76,23 +117,50 @@ export default function StudentQuizzesPage() {
 
   // Process quizzes with attempt status when both data sources are available
   useEffect(() => {
-    if (activeQuizzes.length > 0 && completedAttempts.length > 0 && user?.id) {
-      const quizzesWithAttemptStatus = activeQuizzes.map((quiz: Quiz) => {
-        const attempt = completedAttempts.find(
-          (a: StudentAttempt) => a.quizId === quiz.id,
-        );
-        return {
-          ...quiz,
-          hasAttempted: !!attempt,
-          attemptStatus: attempt ? attempt.status : null,
-        };
-      });
+    if (activeQuizzes.length > 0) {
+      let processedQuizzes = activeQuizzes;
 
-      setFilteredQuizzes(quizzesWithAttemptStatus);
-    } else if (activeQuizzes.length > 0) {
-      setFilteredQuizzes(activeQuizzes);
+      // Add attempt status if available
+      if (completedAttempts.length > 0 && user?.id) {
+        processedQuizzes = activeQuizzes.map((quiz: Quiz) => {
+          const attempt = completedAttempts.find(
+            (a: StudentAttempt) => a.quizId === quiz.id,
+          );
+          return {
+            ...quiz,
+            hasAttempted: !!attempt,
+            attemptStatus: attempt ? attempt.status : null,
+          };
+        });
+      }
+
+      // Filter by selected course if one is selected (frontend filtering for UI)
+      if (selectedCourseId) {
+        processedQuizzes = processedQuizzes.filter(
+          (quiz: Quiz) => quiz.course.id === selectedCourseId,
+        );
+      }
+
+      // Filter by search query
+      if (searchQuery.trim()) {
+        processedQuizzes = processedQuizzes.filter(
+          (quiz: Quiz) =>
+            quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            quiz.description?.toLowerCase().includes(searchQuery.toLowerCase()),
+        );
+      }
+
+      setFilteredQuizzes(processedQuizzes);
+    } else {
+      setFilteredQuizzes([]);
     }
-  }, [activeQuizzes, completedAttempts, user?.id]);
+  }, [
+    activeQuizzes,
+    completedAttempts,
+    user?.id,
+    selectedCourseId,
+    searchQuery,
+  ]);
 
   // Process completed attempts
   useEffect(() => {
@@ -166,14 +234,14 @@ export default function StudentQuizzesPage() {
   };
 
   const renderActiveQuizzes = () => {
-    if (isLoadingQuizzes) {
+    if (isLoadingQuizzes && !isFetchingQuizzes) {
       return <StudentQuizzesLoader />;
     }
 
     if (filteredQuizzes.length === 0) {
       return (
-        <div>
-          <div className="flex h-40 flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+        <div className={`${isFetchingQuizzes ? "opacity-50" : ""}`}>
+          <div className="flex h-full flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
             <BookOpen className="mb-2 h-10 w-10 text-muted-foreground" />
             <h3 className="text-lg font-medium">No active quizzes</h3>
             <p className="text-sm text-muted-foreground">
@@ -185,7 +253,9 @@ export default function StudentQuizzesPage() {
     }
 
     return (
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div
+        className={`grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 ${isFetchingQuizzes ? "opacity-50" : ""}`}
+      >
         {filteredQuizzes.map((quiz) => {
           const statusBadge = getQuizStatusBadge(quiz);
           const hasCompletedAttempt = completedAttempts.some(
@@ -245,13 +315,16 @@ export default function StudentQuizzesPage() {
   };
 
   const renderCompletedQuizzes = () => {
-    if (isLoadingAttempts) {
-      return <StudentQuizzesLoader />;
+    // Show subtle loading indicator when refetching (not initial load)
+    if (isLoadingAttempts && !isFetchingAttempts) {
+      return <h1>Loading</h1>;
     }
 
     if (filteredAttempts.length === 0) {
       return (
-        <div className="flex h-40 flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed p-8 text-center">
+        <div
+          className={`flex h-40 flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed p-8 text-center ${isFetchingAttempts ? "opacity-50" : ""}`}
+        >
           <Trophy className="mb-2 h-10 w-10 text-muted-foreground" />
           <h3 className="text-lg font-medium">No completed quizzes</h3>
           <p className="text-sm text-muted-foreground">
@@ -262,7 +335,9 @@ export default function StudentQuizzesPage() {
     }
 
     return (
-      <div className="space-y-3 overflow-hidden">
+      <div
+        className={`space-y-3 overflow-hidden ${isFetchingAttempts ? "opacity-50" : ""}`}
+      >
         {filteredAttempts.map((attempt) => (
           <CompletedAttemptCard
             key={attempt.id}
@@ -280,9 +355,12 @@ export default function StudentQuizzesPage() {
   };
 
   const refreshQuizzes = () => {
-    // React Query handles refreshing automatically
-    // The data will be refetched when the component re-renders
+    handleRefresh();
   };
+
+  if (isLoading) {
+    return <StudentQuizzesLoader />;
+  }
 
   return (
     <div className="scrollbar container mx-auto h-full overflow-y-auto rounded-xl bg-bground2 pt-8">
@@ -305,9 +383,12 @@ export default function StudentQuizzesPage() {
             variant="outline"
             size="icon"
             onClick={refreshQuizzes}
+            disabled={isFetching}
             className="ml-2 bg-accent"
           >
-            <RefreshCcw className="h-4 w-4" />
+            <RefreshCcw
+              className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+            />
           </Button>
         </div>
 

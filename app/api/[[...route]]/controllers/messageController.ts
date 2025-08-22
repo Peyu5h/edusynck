@@ -48,6 +48,8 @@ export const sendMessage = async (c: Context) => {
   try {
     const { room, content, sender, files } = await c.req.json();
 
+    console.log("Received message data:", { room, content, sender, files });
+
     if (!room || !sender || (!content && (!files || files.length === 0))) {
       return c.json(
         { message: "Room, sender, and content or files are required" },

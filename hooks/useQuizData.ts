@@ -77,15 +77,27 @@ export const useQuizLeaderboard = (quizId: string) => {
 };
 
 // Active quizzes hook
-export const useActiveQuizzes = (courseId?: string) => {
+export const useActiveQuizzes = (courseId?: string, userId?: string) => {
   return useQuery({
-    queryKey: ["active-quizzes", courseId],
+    queryKey: ["active-quizzes", courseId, userId],
     queryFn: async () => {
       let url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/active`;
+      const params = new URLSearchParams();
+
       if (courseId) {
-        url += `?courseId=${courseId}`;
+        params.append("courseId", courseId);
       }
+      if (userId) {
+        params.append("userId", userId);
+      }
+
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+
+      console.log("Fetching active quizzes from:", url);
       const response = await axios.get(url);
+      console.log("Active quizzes response:", response.data);
       return response.data;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -104,5 +116,20 @@ export const useStudentAttempts = (userId: string) => {
     },
     enabled: !!userId,
     staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};
+
+// Teacher quizzes hook
+export const useTeacherQuizzes = (courseId: string) => {
+  return useQuery({
+    queryKey: ["teacher-quizzes", courseId],
+    queryFn: async () => {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/course/${courseId}`,
+      );
+      return response.data;
+    },
+    enabled: !!courseId,
+    staleTime: 1 * 60 * 1000, // 1 minute - shorter for teachers to see updates faster
   });
 };

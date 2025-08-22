@@ -101,6 +101,7 @@ export default function ChatsPage() {
       }
 
       try {
+        console.log("Sending message data:", messageData);
         await axios.post("/api/chat/send", messageData);
         console.log("Message sent successfully");
       } catch (error) {
@@ -124,14 +125,14 @@ export default function ChatsPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col">
+    <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
       <div
         ref={messagesContainerRef}
-        className="scrollbar min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2 py-4"
+        className="scrollbar flex-1 overflow-y-auto overflow-x-hidden px-2 py-4 pb-20"
       >
         <Messages messages={messages} currentUserId={user.id} />
       </div>
-      <div className="w-full bg-transparent px-2 pb-4 pt-2">
+      <div className="absolute bottom-0 left-0 right-0 px-2 pb-4 pt-2">
         <ChatInput onSend={sendMessage} />
       </div>
     </div>

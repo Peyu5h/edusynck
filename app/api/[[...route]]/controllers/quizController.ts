@@ -65,7 +65,7 @@ export const createQuiz = async (c: Context) => {
         description,
         courseId,
         createdBy: userId,
-        status: status || "ACTIVE",
+        status: "ACTIVE",
         startTime: startTime ? new Date(startTime) : null,
         endTime: endTime ? new Date(endTime) : null,
         duration: duration || null,
@@ -267,7 +267,6 @@ export const updateQuiz = async (c: Context) => {
     });
 
     if (questions && Array.isArray(questions)) {
-      // Delete existing questions
       await prisma.quizQuestion.deleteMany({
         where: { quizId },
       });
@@ -369,12 +368,7 @@ export const startQuizAttempt = async (c: Context) => {
     }
 
     const quiz = await prisma.quiz.findUnique({
-      where: {
-        id: quizId,
-        status: "ACTIVE",
-        startTime: { lte: new Date() },
-        endTime: { gte: new Date() },
-      },
+      where: { id: quizId },
       include: { questions: true },
     });
 
@@ -382,9 +376,40 @@ export const startQuizAttempt = async (c: Context) => {
       return c.json(
         {
           success: false,
-          message: "Quiz not found or not currently active",
+          message: "Quiz not found",
         },
         404,
+      );
+    }
+
+    if (quiz.status !== "ACTIVE") {
+      return c.json(
+        {
+          success: false,
+          message: "Quiz is not active",
+        },
+        400,
+      );
+    }
+
+    const now = new Date();
+    if (quiz.startTime && quiz.startTime > now) {
+      return c.json(
+        {
+          success: false,
+          message: "Quiz has not started yet",
+        },
+        400,
+      );
+    }
+
+    if (quiz.endTime && quiz.endTime < now) {
+      return c.json(
+        {
+          success: false,
+          message: "Quiz has ended",
+        },
+        400,
       );
     }
 
@@ -818,16 +843,55 @@ export const getActiveQuizzesByCourse = async (c: Context) => {
 
     const filters: any = {
       status: "ACTIVE",
-      startTime: { lte: new Date() },
-      endTime: { gte: new Date() },
     };
 
-    if (courseId) {
-      filters.courseId = courseId;
+    const timeFilters: any = {};
+
+    timeFilters.OR = [{ startTime: null }, { startTime: { lte: new Date() } }];
+
+    const endTimeFilter = {
+      OR: [{ endTime: null }, { endTime: { gte: new Date() } }],
+    };
+
+    const finalFilters = {
+      ...filters,
+      AND: [timeFilters, endTimeFilter],
+    };
+
+    if (userId && !courseId) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          class: {
+            include: {
+              courses: {
+                select: { id: true },
+              },
+            },
+          },
+        },
+      });
+
+      if (user?.class?.courses) {
+        const courseIds = user.class.courses.map((course) => course.id);
+        finalFilters.courseId = { in: courseIds };
+        console.log(
+          `Filtering quizzes for user ${userId} by courses:`,
+          courseIds,
+        );
+      } else {
+        console.log(`User ${userId} has no enrolled courses`);
+        return c.json({
+          success: true,
+          data: [],
+        });
+      }
+    } else if (courseId) {
+      finalFilters.courseId = courseId;
     }
 
     const quizzes = await prisma.quiz.findMany({
-      where: filters,
+      where: finalFilters,
       include: {
         _count: {
           select: { questions: true },
@@ -838,6 +902,17 @@ export const getActiveQuizzesByCourse = async (c: Context) => {
       },
       orderBy: { createdAt: "desc" },
     });
+
+    console.log(
+      `Found ${quizzes.length} active quizzes:`,
+      quizzes.map((q) => ({
+        id: q.id,
+        title: q.title,
+        courseId: q.courseId,
+        courseName: q.course.name,
+        status: q.status,
+      })),
+    );
 
     let quizzesWithAttempts = quizzes;
     if (userId) {
@@ -860,6 +935,11 @@ export const getActiveQuizzesByCourse = async (c: Context) => {
             attemptStatus: attempt?.status || null,
           };
         }),
+      );
+
+      quizzesWithAttempts = quizzesWithAttempts.filter(
+        // @ts-ignore - sad
+        (quiz) => quiz.attemptStatus !== "COMPLETED",
       );
     }
 

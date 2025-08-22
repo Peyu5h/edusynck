@@ -1,64 +1,27 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
 import { useUser } from "~/hooks/useUser";
 import axios from "axios";
-import { AxiosResponse } from "axios";
-import { Button } from "~/components/ui/button";
-import { Video, VideoOff, MicOff, Mic, Phone, Users, Plus } from "lucide-react";
 import ChatInput from "~/components/ChatPage/Attachement/ChatInput";
 import Messages from "~/components/ChatPage/Messages";
-import SubjectCardLoader from "~/components/Loaders/SubjectCardLoader";
 import ChatScreenLoader from "~/components/Loaders/ChatScreenLoader";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import { useSelector } from "react-redux";
 import { subscribeToClassChat } from "~/lib/pusher-client";
-
-interface Message {
-  id: string;
-  sender: { id: string; name: string };
-  content: string;
-  files?: any[];
-  createdAt: string;
-}
-
-interface Class {
-  id: string;
-  name: string;
-}
+import { Message } from "~/lib/types";
+import { useSelector } from "react-redux";
 
 export default function TeacherChatsPage() {
-  const [messages, setMessages] = useState<any[]>([]);
-  const [selectedClass, setSelectedClass] = useState<string>("");
-  const [videoMeetActive, setVideoMeetActive] = useState(false);
-  const [micMuted, setMicMuted] = useState(false);
-  const [videoOff, setVideoOff] = useState(false);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const { user } = useUser();
+  const { user, isLoading: userLoading } = useUser();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const taughtClasses = useSelector(
     (state: any) => state.user.user?.taughtClasses || [],
   );
 
-  useEffect(() => {
-    if (taughtClasses.length > 0 && !selectedClass) {
-      setSelectedClass(taughtClasses[0].id);
-    }
-  }, [taughtClasses, selectedClass]);
+  // Use the first class as default
+  const selectedClass = taughtClasses.length > 0 ? taughtClasses[0].id : "";
 
   // Fetch initial messages when component mounts or selected class changes
   useEffect(() => {
@@ -150,6 +113,7 @@ export default function TeacherChatsPage() {
 
       try {
         // Send message using our API endpoint
+        console.log("Sending message data:", messageData);
         await axios.post("/api/chat/send", messageData);
         console.log("Message sent successfully");
       } catch (error) {
@@ -158,136 +122,29 @@ export default function TeacherChatsPage() {
     }
   };
 
-  const startVideoMeet = () => {
-    setVideoMeetActive(true);
-    // Here you would initiate the video call with a service like WebRTC or a third-party API
-    console.log(`Starting video meet for class: ${selectedClass}`);
-  };
+  if (userLoading || isLoading) {
+    return <ChatScreenLoader />;
+  }
 
-  const endVideoMeet = () => {
-    setVideoMeetActive(false);
-    // Here you would end the video call
-    console.log("Ending video meet");
-  };
-
-  if (!user) {
+  if (!selectedClass) {
     return (
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {[...Array(6)].map((_, index) => (
-          <SubjectCardLoader key={index} />
-        ))}
+      <div className="flex h-full items-center justify-center">
+        <p className="text-muted-foreground">No classes assigned</p>
       </div>
     );
   }
 
-  if (isLoading && selectedClass) {
-    return <ChatScreenLoader />;
-  }
-
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <Select value={selectedClass} onValueChange={setSelectedClass}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select a class" />
-            </SelectTrigger>
-            <SelectContent>
-              {taughtClasses.map((cls: Class) => (
-                <SelectItem key={cls.id} value={cls.id}>
-                  {cls.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {!videoMeetActive ? (
-            <Button variant="default" className="" onClick={startVideoMeet}>
-              Start Video Meet
-            </Button>
-          ) : (
-            <div className="flex items-center">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setMicMuted(!micMuted)}
-              >
-                {micMuted ? (
-                  <MicOff className="h-4 w-4" />
-                ) : (
-                  <Mic className="h-4 w-4" />
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setVideoOff(!videoOff)}
-              >
-                {videoOff ? (
-                  <VideoOff className="h-4 w-4" />
-                ) : (
-                  <Video className="h-4 w-4" />
-                )}
-              </Button>
-              <Button variant="destructive" size="icon" onClick={endVideoMeet}>
-                <Phone className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon">
-                <Users className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </div>
+    <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
+      <div
+        ref={messagesContainerRef}
+        className="scrollbar flex-1 overflow-y-auto overflow-x-hidden px-2 py-4 pb-20"
+      >
+        <Messages messages={messages} currentUserId={user.id} />
       </div>
-
-      {videoMeetActive && (
-        <Card className="mb-6 overflow-hidden">
-          <CardHeader className="bg-primary px-4 py-2">
-            <CardTitle className="text-sm text-white">
-              Video Meet:{" "}
-              {
-                taughtClasses.find((cls: Class) => cls.id === selectedClass)
-                  ?.name
-              }
-            </CardTitle>
-          </CardHeader>
-          <div className="aspect-video bg-black">
-            {/* Video stream would be embedded here */}
-            <div className="flex h-full items-center justify-center text-white">
-              {videoOff ? (
-                <p>Camera is off</p>
-              ) : (
-                <p>Video stream would appear here</p>
-              )}
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {selectedClass ? (
-        <Card className="mx-auto flex h-[65vh] w-full flex-col justify-between overflow-hidden shadow-md">
-          <CardContent>
-            <div
-              ref={messagesContainerRef}
-              className="scrollbar h-[50vh] overflow-y-auto pr-4"
-            >
-              <Messages messages={messages} currentUserId={user.id} />
-            </div>
-          </CardContent>
-          <CardFooter className="min-w-4xl flex w-full justify-center">
-            <ChatInput onSend={sendMessage} />
-          </CardFooter>
-        </Card>
-      ) : (
-        <Card className="mx-auto mt-8 max-w-lg p-8 text-center">
-          <p className="text-muted-foreground">
-            Please select a class to view the chat
-          </p>
-        </Card>
-      )}
+      <div className="absolute bottom-0 left-0 right-0 px-2 pb-4 pt-2">
+        <ChatInput onSend={sendMessage} />
+      </div>
     </div>
   );
 }

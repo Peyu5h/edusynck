@@ -11,6 +11,7 @@ import {
   Calendar,
   Settings,
   Loader2,
+  RefreshCcw,
 } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import {
@@ -27,12 +28,13 @@ import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import axios from "axios";
 import { toast } from "~/components/ui/use-toast";
+import { useTeacherQuizzes } from "~/hooks/useQuizData";
 
 interface Quiz {
   id: string;
   title: string;
   description: string | null;
-  status: "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
+  status: "ACTIVE" | "COMPLETED" | "CANCELLED";
   startTime: string | null;
   endTime: string | null;
   duration: number | null;
@@ -46,10 +48,8 @@ interface Quiz {
 }
 
 export default function QuizzesPage() {
-  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [filteredQuizzes, setFilteredQuizzes] = useState<Quiz[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
   const user = useSelector((state: any) => state.user.user);
@@ -57,18 +57,23 @@ export default function QuizzesPage() {
     ? user.taughtClasses.flatMap((cls: any) => cls.courses || [])
     : [];
 
+  // Use React Query for data fetching
+  const {
+    data: quizzesData,
+    isLoading,
+    isFetching,
+    refetch: refetchQuizzes,
+  } = useTeacherQuizzes(selectedCourseId || "");
+
+  const quizzes = quizzesData?.success ? quizzesData.data : quizzesData || [];
+
   useEffect(() => {
     if (courses.length > 0 && !selectedCourseId) {
       setSelectedCourseId(courses[0].id);
     }
   }, [courses]);
 
-  useEffect(() => {
-    if (selectedCourseId) {
-      fetchQuizzes(selectedCourseId);
-    }
-  }, [selectedCourseId]);
-
+  // Update filtered quizzes when data or search changes
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredQuizzes(quizzes);
@@ -80,42 +85,13 @@ export default function QuizzesPage() {
     }
   }, [searchQuery, quizzes]);
 
-  const fetchQuizzes = async (courseId: string) => {
-    setIsLoading(true);
-    try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/course/${courseId}`,
-      );
-      if (response.data.success) {
-        setQuizzes(response.data.data);
-        setFilteredQuizzes(response.data.data);
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to fetch quizzes",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching quizzes:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch quizzes",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  // Refresh function
+  const handleRefresh = () => {
+    refetchQuizzes();
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "DRAFT":
-        return (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
-            Draft
-          </Badge>
-        );
       case "ACTIVE":
         return (
           <Badge variant="outline" className="bg-green-100 text-green-800">
@@ -166,19 +142,32 @@ export default function QuizzesPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          {courses.length > 0 && (
-            <select
-              className="rounded-md border p-2"
-              value={selectedCourseId || ""}
-              onChange={(e) => setSelectedCourseId(e.target.value)}
+          <div className="flex items-center gap-2">
+            {courses.length > 0 && (
+              <select
+                className="rounded-md border p-2"
+                value={selectedCourseId || ""}
+                onChange={(e) => setSelectedCourseId(e.target.value)}
+              >
+                {courses.map((course: any) => (
+                  <option key={course.id} value={course.id}>
+                    {course.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={isFetching}
+              className="bg-accent"
             >
-              {courses.map((course: any) => (
-                <option key={course.id} value={course.id}>
-                  {course.name}
-                </option>
-              ))}
-            </select>
-          )}
+              <RefreshCcw
+                className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+              />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -190,19 +179,12 @@ export default function QuizzesPage() {
         <Tabs defaultValue="all">
           <TabsList className="mb-6">
             <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="draft">Draft</TabsTrigger>
             <TabsTrigger value="active">Active</TabsTrigger>
             <TabsTrigger value="completed">Completed</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="space-y-4">
             {renderQuizzes(filteredQuizzes)}
-          </TabsContent>
-
-          <TabsContent value="draft" className="space-y-4">
-            {renderQuizzes(
-              filteredQuizzes.filter((quiz) => quiz.status === "DRAFT"),
-            )}
           </TabsContent>
 
           <TabsContent value="active" className="space-y-4">

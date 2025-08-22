@@ -41,49 +41,14 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSend }) => {
     return file.type.startsWith("image/");
   }
 
-  // Helper to upload to Cloudinary (replace with your logic)
-  async function uploadToCloudinary(file: File): Promise<string> {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", "chat-attachments");
-    const res = await fetch(
-      "https://api.cloudinary.com/v1_1/dxxzqzqzq/upload",
-      {
-        method: "POST",
-        body: formData,
-      },
-    );
-    const data = await res.json();
-    return data.secure_url;
-  }
-
   const handleFilesSelected = (files: File[]) => {
     setSelectedFiles(files);
-    // Do NOT send automatically anymore
-  };
-
-  const handleUploadFiles = async () => {
-    if (selectedFiles.length === 0) return;
-    setUploading(true);
-    // Optimistically show in chat (call onSend with local preview URLs)
-    const previews = selectedFiles.map((file) =>
-      isImage(file) ? URL.createObjectURL(file) : file.name,
-    );
-    onSend("", selectedFiles); // You may want to pass previews for optimistic UI
-    // Upload each file
-    const uploadedUrls = [];
-    for (const file of selectedFiles) {
-      try {
-        const url = await uploadToCloudinary(file);
-        uploadedUrls.push(url);
-      } catch (e) {
-        uploadedUrls.push(null);
-      }
+    // Automatically send the files when selected
+    if (files.length > 0) {
+      onSend("", files);
+      setSelectedFiles([]);
+      setIsAttachmentOpen(false);
     }
-    // Optionally, update chat with real URLs (requires chat logic to support update)
-    setSelectedFiles([]);
-    setUploading(false);
-    setIsAttachmentOpen(false);
   };
 
   return (

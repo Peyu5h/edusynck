@@ -194,7 +194,7 @@ model Quiz {
   createdBy       String
   creator         User                 @relation(fields: [createdBy], references: [id])
   questions       QuizQuestion[]
-  status          QuizStatus           @default(DRAFT)
+  status          QuizStatus           @default(ACTIVE)
   startTime       DateTime?
   endTime         DateTime?
   duration        Int?
@@ -279,7 +279,6 @@ enum UserRole {
 }
 
 enum QuizStatus {
-  DRAFT
   ACTIVE
   COMPLETED
   CANCELLED

@@ -11,3 +11,4 @@ export { default as QuizAttemptLoader } from "./QuizAttemptLoader";
 export { default as QuizLeaderboardLoader } from "./QuizLeaderboardLoader";
 export { default as QuizResultsLoader } from "./QuizResultsLoader";
 export { default as StudentQuizzesLoader } from "./StudentQuizzesLoader";
+export { default as RecommendationsLoader } from "./RecommendationsLoader";

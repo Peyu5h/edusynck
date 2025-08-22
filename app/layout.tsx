@@ -5,7 +5,6 @@ import { Toaster } from "~/components/ui/toaster";
 import { ThemeProvider } from "next-themes";
 import { ReduxProvider } from "~/store/ReduxProvider";
 import ReactQueryProvider from "~/components/ReactQueryProvider";
-import UserHydration from "~/store/slices/useUserHydration";
 import UserProvider from "~/components/auth/UserProvider";
 
 const inter = Inter({
@@ -54,7 +53,6 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              <UserHydration />
               <UserProvider />
               {children}
             </ThemeProvider>

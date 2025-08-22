@@ -1,4 +1,4 @@
-import {  format, differenceInDays } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { prisma } from "~/lib/prisma";
 import { Context } from "hono";
 import { success, err } from "../utils/response";
@@ -152,12 +152,9 @@ export const updateUserStreak = async (c: Context) => {
           lastActiveDate,
         );
 
-        // If last active was yesterday, increment streak
         if (daysSinceLastActive === 1) {
           currentStreak += 1;
-        }
-        // If last active was not yesterday, reset streak to 1
-        else if (daysSinceLastActive > 1) {
+        } else if (daysSinceLastActive > 1) {
           currentStreak = 1;
         }
       } else {
@@ -184,6 +181,48 @@ export const updateUserStreak = async (c: Context) => {
     return c.json({ streak, message: "Streak already updated today" });
   } catch (error) {
     console.error("Error updating user streak:", error);
+    return c.json(err("Server error"), 500);
+  }
+};
+
+export const updateUser = async (c: Context) => {
+  try {
+    const userId = c.req.param("userId");
+    const { name } = await c.req.json();
+
+    if (!userId) {
+      return c.json(err("User ID is required"), 400);
+    }
+
+    if (!name || !name.trim()) {
+      return c.json(err("Name is required"), 400);
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: name.trim(),
+      },
+      include: {
+        class: {
+          include: {
+            courses: true,
+          },
+        },
+        taughtClasses: {
+          include: {
+            courses: true,
+            students: true,
+          },
+        },
+      },
+    });
+
+    const { password, ...userWithoutPassword } = updatedUser;
+
+    return c.json(success(userWithoutPassword));
+  } catch (error) {
+    console.error("Error updating user:", error);
     return c.json(err("Server error"), 500);
   }
 };

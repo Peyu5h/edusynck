@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import moment from "moment";
 import SeenIcon from "./svg/SeenIcon";
 import { HiDownload } from "react-icons/hi";
 import useDownloader from "react-use-downloader";
 import { saveAs } from "file-saver";
+import ImageDialog from "./ImageDialog";
 
 import {
   FaFileAlt,
@@ -11,7 +12,6 @@ import {
   FaFilePdf,
   FaFileWord,
   FaFileExcel,
-  FaDownload,
 } from "react-icons/fa";
 import Image from "next/image";
 
@@ -36,6 +36,11 @@ interface MessagesProps {
 }
 
 const Messages: React.FC<MessagesProps> = ({ messages, currentUserId }) => {
+  const [selectedImage, setSelectedImage] = useState<{
+    url: string;
+    name: string;
+  } | null>(null);
+
   const getFileIcon = (type: string) => {
     if (type.startsWith("image")) return <FaImage />;
     if (type.includes("pdf")) return <FaFilePdf />;
@@ -115,113 +120,133 @@ const Messages: React.FC<MessagesProps> = ({ messages, currentUserId }) => {
   };
 
   return (
-    <div className="flex flex-col space-y-4">
-      {messages.map((message) => {
-        const isCurrentUser = message.sender?.id === currentUserId;
+    <>
+      <div className="flex flex-col space-y-4 overflow-x-hidden">
+        {messages.map((message) => {
+          const isCurrentUser = message.sender?.id === currentUserId;
 
-        return (
-          <div
-            key={message.id}
-            className={`relative flex items-start ${isCurrentUser ? "justify-end" : "justify-start"}`}
-          >
-            {!isCurrentUser && message.sender && (
-              <div className="mr-2 flex-shrink-0">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange">
-                  <span className="text-sm font-semibold">
-                    {message.sender.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              </div>
-            )}
+          return (
             <div
-              className={`max-w-[70%] ${
-                isCurrentUser
-                  ? "rounded-l-lg rounded-br-lg"
-                  : "rounded-r-lg rounded-bl-lg"
-              } px-3 pt-3 ${
-                isCurrentUser
-                  ? "bg-blue text-white"
-                  : "bg-secondary text-foreground"
-              }`}
+              key={message.id}
+              className={`relative flex items-start ${isCurrentUser ? "justify-end" : "justify-start"}`}
             >
-              <div
-                className={`absolute top-[0px] h-4 w-3 ${
-                  isCurrentUser ? "triangle-right right-[-11px] bg-blue" : null
-                } `}
-              ></div>
               {!isCurrentUser && message.sender && (
-                <p className="mb-1 text-xs font-bold">{message.sender.name}</p>
+                <div className="mr-2 flex-shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange">
+                    <span className="text-sm font-semibold">
+                      {message.sender.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                </div>
               )}
-              <p>{message.content}</p>
-              <p className="mb-1 flex items-center justify-end text-right text-[10px] opacity-50">
-                <div className="mt-1">
-                  {moment(message.createdAt).format("h:mm A")}
-                </div>
-                <div className="ml-1 flex items-center justify-center">
-                  {isCurrentUser && (
-                    <SeenIcon className="fill-teal-200 text-[10px]" />
-                  )}
-                </div>
-              </p>
-              {message.files && message.files.length > 0 && (
-                <div className="mb-4 mt-2 flex flex-wrap gap-2">
-                  {message.files.map((file, index) => (
-                    <div key={index} className="flex flex-col items-center">
-                      {file.type.startsWith("image") ? (
-                        <a
-                          href={file.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Image
-                            src={file.url}
-                            alt={file.name}
-                            width={100}
-                            height={100}
-                            layout="responsive"
-                            className="h-20 max-w-[300px] rounded-lg"
-                          />
-                        </a>
-                      ) : (
-                        <div className="mb-2 flex h-20 w-[300px] items-center justify-between rounded-lg bg-black bg-opacity-25 p-4">
-                          <div className="flex gap-x-2">
-                            <img
-                              src={getPreviewImg(getFileType(file.type))}
-                              className="h-10 w-10"
-                              alt=""
+              <div
+                className={`max-w-[70%] ${
+                  isCurrentUser
+                    ? "rounded-l-lg rounded-br-lg"
+                    : "rounded-r-lg rounded-bl-lg"
+                } px-3 pt-3 ${
+                  isCurrentUser
+                    ? "bg-blue text-white"
+                    : "bg-secondary text-foreground"
+                }`}
+              >
+                <div
+                  className={`absolute top-[0px] h-4 w-3 ${
+                    isCurrentUser
+                      ? "triangle-right right-[-11px] bg-blue"
+                      : null
+                  } `}
+                ></div>
+                {!isCurrentUser && message.sender && (
+                  <p className="mb-1 text-xs font-bold">
+                    {message.sender.name}
+                  </p>
+                )}
+                <p>{message.content}</p>
+                <p className="mb-1 flex items-center justify-end text-right text-[10px] opacity-50">
+                  <div className="mt-1">
+                    {moment(message.createdAt).format("h:mm A")}
+                  </div>
+                  <div className="ml-1 flex items-center justify-center">
+                    {isCurrentUser && (
+                      <SeenIcon className="fill-teal-200 text-[10px]" />
+                    )}
+                  </div>
+                </p>
+                {message.files && message.files.length > 0 && (
+                  <div className="mb-4 mt-2 flex flex-wrap gap-2">
+                    {message.files.map((file, index) => (
+                      <div key={index} className="flex flex-col items-center">
+                        {file.type.startsWith("image") ? (
+                          <div
+                            className="cursor-pointer transition-opacity hover:opacity-80"
+                            onClick={() =>
+                              setSelectedImage({
+                                url: file.url,
+                                name: file.name,
+                              })
+                            }
+                          >
+                            <Image
+                              src={file.url}
+                              alt={file.name}
+                              width={200}
+                              height={150}
+                              className="max-h-[200px] max-w-[240px] rounded-lg object-cover"
                             />
+                          </div>
+                        ) : (
+                          <div className="mb-2 flex h-20 w-[300px] items-center justify-between rounded-lg bg-black bg-opacity-25 p-4">
+                            <div className="flex gap-x-2">
+                              <img
+                                src={getPreviewImg(getFileType(file.type))}
+                                className="h-10 w-10"
+                                alt=""
+                              />
 
-                            <div className="description">
-                              <h1 className="text-dark_text_1 text-sm">
-                                {file.name}
-                              </h1>
-                              <h1 className="text-dark_text_2 text-xs">
-                                {file.size
-                                  ? `${(file.size / (1024 * 1024)).toFixed(2)} MB`
-                                  : "0.4 MB"}{" "}
-                                - {getFileType(file.type)}
-                              </h1>
+                              <div className="description">
+                                <h1 className="text-dark_text_1 text-sm">
+                                  {file.name}
+                                </h1>
+                                <h1 className="text-dark_text_2 text-xs">
+                                  {file.size
+                                    ? `${(file.size / (1024 * 1024)).toFixed(2)} MB`
+                                    : "0.4 MB"}{" "}
+                                  - {getFileType(file.type)}
+                                </h1>
+                              </div>
+                            </div>
+
+                            {/* download Button */}
+                            <div
+                              onClick={() =>
+                                handleDownload(file.url, file.name)
+                              }
+                              className="cursor-pointer rounded-full border-2 border-thintext p-2"
+                            >
+                              <HiDownload className="text-dark_svg_1 text-xl" />
                             </div>
                           </div>
-
-                          {/* download Button */}
-                          <div
-                            onClick={() => handleDownload(file.url, file.name)}
-                            className="cursor-pointer rounded-full border-2 border-thintext p-2"
-                          >
-                            <HiDownload className="text-dark_svg_1 text-xl" />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+
+      {selectedImage && (
+        <ImageDialog
+          isOpen={!!selectedImage}
+          onClose={() => setSelectedImage(null)}
+          imageUrl={selectedImage.url}
+          imageName={selectedImage.name}
+        />
+      )}
+    </>
   );
 };
 

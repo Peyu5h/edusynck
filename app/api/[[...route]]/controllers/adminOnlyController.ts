@@ -328,7 +328,7 @@ export const extractTextFromPptxUrl = async (c: Context) => {
 
 export const getYoutubeVideos = async (c: Context) => {
   try {
-    const { keywords } = await c.req.json();
+    const { keywords, maxResults = 6 } = await c.req.json();
 
     if (!keywords || typeof keywords !== "string") {
       return c.json({ error: "Keywords are required" }, 400);
@@ -340,10 +340,15 @@ export const getYoutubeVideos = async (c: Context) => {
       return c.json({ error: "YouTube API key is not configured" }, 500);
     }
 
+    // Ensure maxResults is within YouTube API limits (1-50)
+    const validMaxResults = Math.min(
+      Math.max(parseInt(maxResults) || 6, 1),
+      50,
+    );
 
     const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
       keywords,
-    )}&type=video&maxResults=4&key=${YOUTUBE_API_KEY}`;
+    )}&type=video&maxResults=${validMaxResults}&key=${YOUTUBE_API_KEY}`;
 
     console.log("Making YouTube API request to:", url);
 
@@ -393,6 +398,35 @@ export const getYoutubeVideos = async (c: Context) => {
     if (!data.items || !Array.isArray(data.items)) {
       console.error("Unexpected YouTube API response format:", data);
       throw new Error("Unexpected response format from YouTube API");
+    }
+
+    // Get video IDs to fetch additional details (duration, view count)
+    const videoIds = data.items.map((item: any) => item.id.videoId).join(",");
+
+    if (videoIds) {
+      try {
+        const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails,statistics&id=${videoIds}&key=${YOUTUBE_API_KEY}`;
+        const detailsResponse = await fetch(detailsUrl);
+
+        if (detailsResponse.ok) {
+          const detailsData = await detailsResponse.json();
+
+          // Merge the details with the original data
+          data.items = data.items.map((item: any) => {
+            const details = detailsData.items?.find(
+              (detail: any) => detail.id === item.id.videoId,
+            );
+            return {
+              ...item,
+              contentDetails: details?.contentDetails,
+              statistics: details?.statistics,
+            };
+          });
+        }
+      } catch (detailsError) {
+        console.warn("Failed to fetch video details:", detailsError);
+        // Continue without details if this fails
+      }
     }
 
     return c.json(data);

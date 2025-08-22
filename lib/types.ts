@@ -69,7 +69,7 @@ export interface Quiz {
   id: string;
   title: string;
   description: string | null;
-  status: "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
+  status: "ACTIVE" | "COMPLETED" | "CANCELLED";
   startTime: string | null;
   endTime: string | null;
   duration: number | null;

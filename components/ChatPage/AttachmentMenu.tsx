@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { FaCamera, FaFileAlt, FaImage, FaTimesCircle } from "react-icons/fa";
 import { IoIosAdd } from "react-icons/io";
 import { motion, AnimatePresence } from "framer-motion";
+import { Loader2 } from "lucide-react";
 
 interface FilePreview {
   file: File;
@@ -12,17 +13,18 @@ interface FilePreview {
 interface AttachmentMenuProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
-  onFilesSelected: (files: File[]) => void; // Add this line
+  onFilesSelected: (files: File[]) => void;
 }
 
 const AttachmentMenu: React.FC<AttachmentMenuProps> = ({
   isOpen,
   setIsOpen,
-  onFilesSelected, // Add this line
+  onFilesSelected,
 }) => {
   const el = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<FilePreview[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const cloudinarySecret = process.env.NEXT_PUBLIC_CLOUDINARY_SECRET;
 
@@ -54,7 +56,7 @@ const AttachmentMenu: React.FC<AttachmentMenuProps> = ({
     });
 
     setSelectedFiles((prev) => [...prev, ...newFiles]);
-    onFilesSelected(files); // Add this line to pass selected files to parent
+    onFilesSelected(files);
   };
 
   const removeFile = (index: number) => {
@@ -62,29 +64,20 @@ const AttachmentMenu: React.FC<AttachmentMenuProps> = ({
   };
 
   const uploadFiles = async () => {
-    for (const filePreview of selectedFiles) {
-      try {
-        const formData = new FormData();
-        formData.append("upload_preset", cloudinarySecret || "");
-        formData.append("file", filePreview.file);
+    if (selectedFiles.length === 0) return;
 
-        const response = await fetch(
-          "https://api.cloudinary.com/v1_1/dkysrpdi6/auto/upload",
-          {
-            method: "POST",
-            body: formData,
-          },
-        );
+    setIsUploading(true);
 
-        const data = await response.json();
-        console.log("Uploaded file URL:", data.secure_url);
-      } catch (error) {
-        console.error("Error uploading file:", error);
-      }
+    try {
+      const files = selectedFiles.map((fp) => fp.file);
+      onFilesSelected(files);
+      setSelectedFiles([]);
+      setIsOpen(false);
+    } catch (error) {
+      console.error("Error handling files:", error);
+    } finally {
+      setIsUploading(false);
     }
-
-    setSelectedFiles([]);
-    setIsOpen(false);
   };
 
   const getFileIcon = (type: string) => {
@@ -202,10 +195,20 @@ const AttachmentMenu: React.FC<AttachmentMenuProps> = ({
             )}
             <button
               onClick={uploadFiles}
-              disabled={selectedFiles.length === 0}
-              className="hover:bg-blue-600 w-full rounded-lg bg-pri py-2 font-bold text-white disabled:cursor-not-allowed disabled:bg-zinc-800"
+              disabled={selectedFiles.length === 0 || isUploading}
+              className="hover:bg-blue-600 flex w-full items-center justify-center gap-2 rounded-lg bg-pri py-2 font-bold text-white disabled:cursor-not-allowed disabled:bg-zinc-800"
             >
-              Upload {selectedFiles.length > 0 && `(${selectedFiles.length})`}
+              {isUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  Upload{" "}
+                  {selectedFiles.length > 0 && `(${selectedFiles.length})`}
+                </>
+              )}
             </button>
           </div>
         </motion.div>

@@ -1,53 +1,34 @@
-import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchUserDetails, hydrateUser } from "~/store/slices/userSlice";
+import { hydrateUser } from "~/store/slices/userSlice";
 
 export const useUser = () => {
   const dispatch = useDispatch();
   const user = useSelector((state: any) => state.user.user);
-
-  const {
-    data: fetchedUser,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["user", user?.id],
-    queryFn: () => fetchUserDetails(user?.id || ""),
-    enabled: !!user?.id && !user, // Only fetch if we have an ID but no user data
-    staleTime: Infinity,
-    retry: false, // Don't retry failed requests
-  });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (fetchedUser) {
-      dispatch(hydrateUser(fetchedUser));
-    }
-  }, [fetchedUser, dispatch]);
-
-  useEffect(() => {
+    // Only run this once on mount to hydrate from localStorage
     const storedUser = localStorage.getItem("user");
     if (storedUser && !user) {
       try {
         const parsedUser = JSON.parse(storedUser);
+        console.log("useUser: Hydrating user from localStorage:", parsedUser);
         dispatch(hydrateUser(parsedUser));
       } catch (error) {
         console.error("Failed to parse stored user:", error);
         localStorage.removeItem("user");
       }
     }
-  }, [dispatch, user]);
+    setIsLoading(false);
+  }, [dispatch]); // Remove user dependency to prevent loops
 
   useEffect(() => {
+    // Sync user to localStorage when it changes
     if (user) {
       localStorage.setItem("user", JSON.stringify(user));
-    } else {
-      localStorage.removeItem("user");
     }
   }, [user]);
 
-  // Return loading state only if we don't have user data and we're not in the process of loading it
-  const isActuallyLoading = isLoading && !user && !localStorage.getItem("user");
-
-  return { user, isLoading: isActuallyLoading, error };
+  return { user, isLoading, error: null };
 };
