@@ -125,12 +125,12 @@ export default function QuizzesPage() {
     <div className="scrollbar container mx-auto h-full overflow-y-auto rounded-xl bg-bground2 pt-8">
       <div className="flex items-center justify-between">
         <h1 className="pb-4 pt-2 text-3xl font-light text-text">Quizzes</h1>
-        <Link href="/teacher/quizzes/create">
-          <Button className="flex items-center gap-2">
+        <Button asChild className="flex items-center gap-2">
+          <Link href="/teacher/quizzes/create">
             <PlusIcon className="h-4 w-4" />
             Create Quiz
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">

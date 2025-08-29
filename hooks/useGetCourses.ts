@@ -4,10 +4,9 @@ import { useQuery, useQueries, UseQueryResult } from "@tanstack/react-query";
 import { useUser } from "./useUser";
 
 const fetchCourses = async (classId: string) => {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/class/${classId}/courses`,
-    { cache: "no-store" },
-  );
+  const res = await fetch(`/api/class/${classId}/courses`, {
+    cache: "no-store",
+  });
   if (!res.ok) throw new Error("Failed to fetch courses");
   return res.json();
 };
