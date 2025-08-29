@@ -6,6 +6,7 @@ import { ThemeProvider } from "next-themes";
 import { ReduxProvider } from "~/store/ReduxProvider";
 import ReactQueryProvider from "~/components/ReactQueryProvider";
 import UserProvider from "~/components/auth/UserProvider";
+import ApiWarmup from "~/components/ApiWarmup";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -53,6 +54,7 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
+              <ApiWarmup />
               <UserProvider />
               {children}
             </ThemeProvider>

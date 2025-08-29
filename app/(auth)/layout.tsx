@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import OnBoardText from "~/components/auth/OnBoardText";
+import ApiWarmup from "~/components/ApiWarmup";
 
 export const metadata: Metadata = {
   title: "Auth",
@@ -13,6 +14,8 @@ export default async function Authlayout({
 }) {
   return (
     <div className="relative flex h-screen w-full items-center justify-center overflow-x-hidden overflow-y-hidden bg-bgImage bg-cover bg-center bg-no-repeat p-36">
+      {/* Warm API on auth pages too */}
+      <ApiWarmup />
       <div
         style={{ zIndex: 2 }}
         className="absolute inset-0 bg-black opacity-20"

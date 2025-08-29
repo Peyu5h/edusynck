@@ -7,7 +7,7 @@ export const useQuizData = (quizId: string, userId?: string) => {
     queryKey: ["quiz", quizId, userId],
     queryFn: async () => {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/${quizId}${userId ? `?userId=${userId}` : ""}`,
+        `/api/quiz/${quizId}${userId ? `?userId=${userId}` : ""}`,
       );
       return response.data;
     },
@@ -21,9 +21,7 @@ export const useQuizAttempt = (attemptId: string) => {
   return useQuery({
     queryKey: ["quiz-attempt", attemptId],
     queryFn: async () => {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/attempt/${attemptId}`,
-      );
+      const response = await axios.get(`/api/quiz/attempt/${attemptId}`);
       return response.data;
     },
     enabled: !!attemptId,
@@ -37,7 +35,7 @@ export const useQuizAnswers = (attemptId: string) => {
     queryKey: ["quiz-answers", attemptId],
     queryFn: async () => {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/attempt/${attemptId}/answers`,
+        `/api/quiz/attempt/${attemptId}/answers`,
       );
       return response.data;
     },
@@ -52,7 +50,7 @@ export const useQuizResults = (attemptId: string) => {
     queryKey: ["quiz-results", attemptId],
     queryFn: async () => {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/attempt/${attemptId}/results`,
+        `/api/quiz/attempt/${attemptId}/results`,
       );
       return response.data;
     },
@@ -66,9 +64,7 @@ export const useQuizLeaderboard = (quizId: string) => {
   return useQuery({
     queryKey: ["quiz-leaderboard", quizId],
     queryFn: async () => {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/${quizId}/leaderboard`,
-      );
+      const response = await axios.get(`/api/quiz/${quizId}/leaderboard`);
       return response.data;
     },
     enabled: !!quizId,
@@ -81,7 +77,7 @@ export const useActiveQuizzes = (courseId?: string, userId?: string) => {
   return useQuery({
     queryKey: ["active-quizzes", courseId, userId],
     queryFn: async () => {
-      let url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/active`;
+      let url = `/api/quiz/active`;
       const params = new URLSearchParams();
 
       if (courseId) {
@@ -109,9 +105,7 @@ export const useStudentAttempts = (userId: string) => {
   return useQuery({
     queryKey: ["student-attempts", userId],
     queryFn: async () => {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/student/${userId}/attempts`,
-      );
+      const response = await axios.get(`/api/quiz/student/${userId}/attempts`);
       return response.data;
     },
     enabled: !!userId,
@@ -124,9 +118,7 @@ export const useTeacherQuizzes = (courseId: string) => {
   return useQuery({
     queryKey: ["teacher-quizzes", courseId],
     queryFn: async () => {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/course/${courseId}`,
-      );
+      const response = await axios.get(`/api/quiz/course/${courseId}`);
       return response.data;
     },
     enabled: !!courseId,
@@ -144,9 +136,7 @@ export const useTeacherActiveQuizzes = (courses: any[]) => {
       // Fetch active quizzes for all courses
       const promises = courses.map(async (course) => {
         try {
-          const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/course/${course.id}`,
-          );
+          const response = await axios.get(`/api/quiz/course/${course.id}`);
           const quizzes = response.data?.success
             ? response.data.data
             : response.data || [];
@@ -161,7 +151,7 @@ export const useTeacherActiveQuizzes = (courses: any[]) => {
             activeQuizzes.map(async (quiz: any) => {
               try {
                 const progressResponse = await axios.get(
-                  `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/${quiz.id}/progress`,
+                  `/api/quiz/${quiz.id}/progress`,
                 );
                 const progress = progressResponse.data?.success
                   ? progressResponse.data.progress

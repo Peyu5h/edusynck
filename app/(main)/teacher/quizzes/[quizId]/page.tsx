@@ -19,9 +19,7 @@ export default function QuizDefaultPage() {
   useEffect(() => {
     const fetchQuizTitle = async () => {
       try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/${quizId}`,
-        );
+        const response = await axios.get(`/api/quiz/${quizId}`);
         if (response.data && response.data.title) {
           setQuizTitle(response.data.title);
         }
