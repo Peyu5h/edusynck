@@ -9,9 +9,16 @@ export async function middleware(request: NextRequest) {
 
   console.log("Middleware: Checking path:", pathname);
 
-  if (request.nextUrl.hostname === "edysynck.peyush.in") {
+  const host = request.nextUrl.hostname;
+  const isLocalhost = host === "localhost" || host.endsWith(".localhost");
+  const isVercelPreview = host.endsWith("vercel.app");
+  const primaryHost = "edusynck.peyush.in";
+  if (!isLocalhost && !isVercelPreview && host !== primaryHost) {
     return NextResponse.redirect(
-      new URL(request.nextUrl.pathname, "https://edusynck.peyush.in"),
+      new URL(
+        request.nextUrl.pathname + request.nextUrl.search,
+        `https://${primaryHost}`,
+      ),
     );
   }
 

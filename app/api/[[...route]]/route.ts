@@ -3,6 +3,9 @@ import { handle } from "hono/vercel";
 import { cors } from "hono/cors";
 import indexRoute from "./routes";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const app = new Hono();
 
 app.use("*", async (c, next) => {
@@ -25,10 +28,9 @@ app.route("/api", indexRoute);
 
 export type AppType = typeof app;
 
-// Make sure all methods are properly handled and exported
 export const GET = handle(app);
 export const POST = handle(app);
 export const PUT = handle(app);
-export const PATCH = handle(app); // Added PATCH method
+export const PATCH = handle(app);
 export const DELETE = handle(app);
 export const OPTIONS = handle(app);
