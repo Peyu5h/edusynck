@@ -139,13 +139,13 @@ const LoginForm = () => {
           </h1>
           <div className="flex space-x-2">
             {guestLoader ? (
-              <Button className="w-full py-6" disabled>
+              <Button className="w-full bg-white py-6 text-black" disabled>
                 <Loader2 className="mr-2 size-4 animate-spin" />
                 Please wait
               </Button>
             ) : (
               <Button
-                className="w-full bg-primary/80 py-6"
+                className="w-full bg-white py-6 text-black hover:bg-white/90"
                 type="button"
                 onClick={handleGuestLogin}
                 disabled={isPending}
@@ -155,7 +155,7 @@ const LoginForm = () => {
             )}
 
             {teacherLoader ? (
-              <Button className="w-full py-6" disabled>
+              <Button className="w-full bg-white py-6 text-black" disabled>
                 <Loader2 className="mr-2 size-4 animate-spin" />
                 Please wait
               </Button>

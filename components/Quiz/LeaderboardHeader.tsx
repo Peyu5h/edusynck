@@ -19,7 +19,7 @@ export default function LeaderboardHeader({
 }: LeaderboardHeaderProps) {
   return (
     <>
-      <h1 className="text-3xl font-bold">{title} - Leaderboard</h1>
+      <h1 className="text-3xl font-light">{title} - Leaderboard</h1>
       <div className="mt-2 flex flex-wrap items-center gap-6">
         <span className="text-base text-muted-foreground">{courseName}</span>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">

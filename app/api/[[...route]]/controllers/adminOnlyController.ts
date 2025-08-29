@@ -37,7 +37,6 @@ function getOAuth2Client() {
 
 export const auth = async (c: Context) => {
   try {
-    // Check if required environment variables are present
     if (
       !process.env.CLIENT_ID ||
       !process.env.CLIENT_SECRET ||
@@ -103,25 +102,24 @@ export const oauth2callback = async (c: Context) => {
 export const allCourses = async (c: Context) => {
   try {
     const oAuth2Client = c.get("googleAuth");
+
+    if (!oAuth2Client) {
+      return c.json([]);
+    }
+
     const classroom = google.classroom({ version: "v1", auth: oAuth2Client });
     const response = await classroom.courses.list({
-      pageSize: 10,
+      pageSize: 50,
       fields: "courses(id,name,courseState),nextPageToken",
     });
 
     if (response.data?.courses) {
       return c.json(response.data.courses);
     }
-    return c.json({ message: "No courses found" });
+
+    return c.json([]);
   } catch (error) {
-    console.error("failed:", error);
-    return c.json(
-      {
-        error: "failed",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      500,
-    );
+    return c.json([]);
   }
 };
 
@@ -260,7 +258,6 @@ export const getImage = async (c: Context) => {
       throw new Error("OAuth2 client not found");
     }
 
-    // Check and refresh token if needed
     if (oAuth2Client.isTokenExpiring()) {
       console.log("getImage: Token expiring, refreshing...");
       try {
@@ -280,7 +277,7 @@ export const getImage = async (c: Context) => {
         Authorization: `Bearer ${oAuth2Client.credentials.access_token}`,
         "User-Agent": "Academia-App/1.0",
       },
-      timeout: 10000, // 10 second timeout
+      timeout: 10000, // 10 sec
     });
 
     if (!response.ok) {
@@ -311,7 +308,6 @@ export const getImage = async (c: Context) => {
       data: imageBuffer,
     });
 
-    // Set response headers
     c.header("Access-Control-Allow-Origin", "*");
     c.header("Access-Control-Allow-Methods", "GET, OPTIONS");
     c.header(
@@ -328,7 +324,6 @@ export const getImage = async (c: Context) => {
       error,
     );
 
-    // Return a more detailed error response
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
     const statusCode = errorMessage.includes("HTTP error! status: 404")
@@ -395,7 +390,7 @@ export const getYoutubeVideos = async (c: Context) => {
       return c.json({ error: "YouTube API key is not configured" }, 500);
     }
 
-    // Ensure maxResults is within YouTube API limits (1-50)
+    // YouTube API limits (1-50)
     const validMaxResults = Math.min(
       Math.max(parseInt(maxResults) || 6, 1),
       50,
@@ -455,7 +450,6 @@ export const getYoutubeVideos = async (c: Context) => {
       throw new Error("Unexpected response format from YouTube API");
     }
 
-    // Get video IDs to fetch additional details (duration, view count)
     const videoIds = data.items.map((item: any) => item.id.videoId).join(",");
 
     if (videoIds) {
@@ -466,7 +460,6 @@ export const getYoutubeVideos = async (c: Context) => {
         if (detailsResponse.ok) {
           const detailsData = await detailsResponse.json();
 
-          // Merge the details with the original data
           data.items = data.items.map((item: any) => {
             const details = detailsData.items?.find(
               (detail: any) => detail.id === item.id.videoId,
@@ -480,7 +473,6 @@ export const getYoutubeVideos = async (c: Context) => {
         }
       } catch (detailsError) {
         console.warn("Failed to fetch video details:", detailsError);
-        // Continue without details if this fails
       }
     }
 

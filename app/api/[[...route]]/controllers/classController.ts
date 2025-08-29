@@ -43,21 +43,50 @@ export const assignCourse = async (c: Context) => {
 
   try {
     const oAuth2Client = c.get("googleAuth");
+
+    if (!oAuth2Client) {
+      return c.json(
+        {
+          error: "failed",
+          message: "Google Classroom authentication not available",
+        },
+        500,
+      );
+    }
+
     const classroom = google.classroom({ version: "v1", auth: oAuth2Client });
 
     for (const googleClassroomId of courseIds) {
-      const courseDetails = await classroom.courses.get({
-        id: googleClassroomId,
-        fields: "id,name",
-      });
+      try {
+        const courseDetails = await classroom.courses.get({
+          id: googleClassroomId,
+          fields: "id,name",
+        });
 
-      await prisma.course.create({
-        data: {
-          name: courseDetails.data.name || "",
-          googleClassroomId: courseDetails.data.id || "",
-          classId: classId || "",
-        },
-      });
+        const existingCourse = await prisma.course.findFirst({
+          where: {
+            googleClassroomId: courseDetails.data.id || "",
+            classId: classId || "",
+          },
+        });
+
+        if (existingCourse) {
+          continue;
+        }
+
+        await prisma.course.create({
+          data: {
+            name: courseDetails.data.name || "",
+            googleClassroomId: courseDetails.data.id || "",
+            classId: classId || "",
+          },
+        });
+      } catch (courseError) {
+        console.error(
+          `Error processing course ${googleClassroomId}:`,
+          courseError,
+        );
+      }
     }
 
     return c.json({ message: "success" });
@@ -88,6 +117,81 @@ export const getOneCourse = async (c: Context) => {
     return c.json(course);
   } catch (error) {
     console.error("Error getting course:", error);
+    return c.json(
+      {
+        error: "failed",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      500,
+    );
+  }
+};
+
+export const getGoogleClassroomCourses = async (c: Context) => {
+  try {
+    const oAuth2Client = c.get("googleAuth");
+
+    if (!oAuth2Client) {
+      return c.json([]);
+    }
+
+    const classroom = google.classroom({ version: "v1", auth: oAuth2Client });
+    const response = await classroom.courses.list({
+      pageSize: 50,
+      fields: "courses(id,name,courseState),nextPageToken",
+    });
+
+    if (response.data?.courses) {
+      return c.json(response.data.courses);
+    }
+
+    return c.json([]);
+  } catch (error) {
+    return c.json([]);
+  }
+};
+
+// Delete a course from a class
+export const deleteCourse = async (c: Context) => {
+  const classId = c.req.param("classId");
+  const courseId = c.req.param("courseId");
+
+  console.log("Delete course request:", { classId, courseId });
+
+  try {
+    // Try to find by internal id first
+    let courseRecord = await prisma.course.findUnique({
+      where: { id: courseId },
+    });
+
+    // If not found, it may be a Google Classroom ID passed from UI – try that
+    if (!courseRecord) {
+      courseRecord = await prisma.course.findFirst({
+        where: { googleClassroomId: courseId, classId },
+      });
+    }
+
+    console.log("Resolved course record:", courseRecord);
+
+    if (!courseRecord) {
+      return c.json({ error: "failed", message: "Course not found" }, 404);
+    }
+
+    // Ensure it belongs to the provided class
+    if (courseRecord.classId !== classId) {
+      return c.json(
+        { error: "failed", message: "Course does not belong to this class" },
+        403,
+      );
+    }
+
+    // Delete the resolved course
+    await prisma.course.delete({ where: { id: courseRecord.id } });
+
+    console.log("Course deleted successfully");
+    return c.json({ message: "Course deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting course:", error);
     return c.json(
       {
         error: "failed",
@@ -192,18 +296,15 @@ export const getAssignments = async (c: Context) => {
 
     const organizedAssignments = await Promise.all(
       courseWork.map(async (ga) => {
-        // Safe type assertions for Google API types
         const dueDate = parseDueDate(
           ga.dueDate as unknown as DueDate | null,
           ga.dueTime as unknown as DueTime | null,
         );
         const formattedDueDate = formatDueDate(dueDate);
 
-        // Safely access materials with null checks
         const materials = ga.materials as unknown as Material[] | undefined;
         const organizedMaterials = organizeAssignmentMaterials(materials);
 
-        // Extract file type safely with null checks
         let fileType = "";
         let thumbnailUrl = "";
 
@@ -223,7 +324,6 @@ export const getAssignments = async (c: Context) => {
             title: ga.title || "",
             description: ga.description || "",
             dueDate,
-            // Need to stringify the complex object for Prisma JSON field
             materials: JSON.stringify(organizedMaterials) as any,
             type: fileType,
             thumbnail: thumbnailUrl,
@@ -236,7 +336,6 @@ export const getAssignments = async (c: Context) => {
             description: ga.description || "",
             dueDate,
             courseId,
-            // Need to stringify the complex object for Prisma JSON field
             materials: JSON.stringify(organizedMaterials) as any,
             type: fileType,
             thumbnail: thumbnailUrl,

@@ -99,8 +99,8 @@ export default function LeaderboardTable({
                     ) : null}
                   </div>
                 </TableCell>
-                <TableCell className="text-right font-bold">
-                  {entry.score} / {totalQuestions}
+                <TableCell className="pr-4 text-right font-bold">
+                  {entry.score}
                 </TableCell>
                 <TableCell className="text-right">
                   {entry.completionTime || entry.formattedTime || "N/A"}

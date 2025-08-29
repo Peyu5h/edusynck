@@ -10,6 +10,7 @@ import {
   getYoutubeVideos,
 } from "../controllers/adminOnlyController";
 import { googleAuthMiddleware } from "../middlewares/googleAuthMiddleware";
+import { jwtMiddleware } from "../middlewares/jwtMiddleware";
 
 const adminRoutes = new Hono();
 
@@ -32,7 +33,12 @@ adminRoutes.get(
   googleAuthMiddleware,
   getAllAssignments,
 );
-adminRoutes.get("/all-courses", googleAuthMiddleware, allCourses);
+adminRoutes.get(
+  "/all-courses",
+  jwtMiddleware,
+  googleAuthMiddleware,
+  allCourses,
+);
 adminRoutes.post("/youtube", googleAuthMiddleware, getYoutubeVideos);
 
 export default adminRoutes;

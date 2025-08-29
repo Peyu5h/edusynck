@@ -1,11 +1,11 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueries, UseQueryResult } from "@tanstack/react-query";
 import { useUser } from "./useUser";
 
-const fetchCourses = async (userId: string) => {
+const fetchCourses = async (classId: string) => {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/class/${userId}/courses`,
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/class/${classId}/courses`,
     { cache: "no-store" },
   );
   if (!res.ok) throw new Error("Failed to fetch courses");
@@ -17,7 +17,31 @@ export function useCourses() {
   return useQuery({
     queryKey: ["courses", user?.classId],
     queryFn: () => fetchCourses(user?.classId),
-    staleTime: 60 * 60 * 1000, //1 hr
-    enabled: !!user?.id,
+    // Always refetch on mount and avoid stale caches after mutations
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchOnMount: "always",
+    enabled: !!user?.id && !!user?.classId,
   });
+}
+
+export function useCoursesForClasses(classIds: string[]) {
+  const queries = useQueries({
+    queries: classIds.map((id) => ({
+      queryKey: ["courses", id],
+      queryFn: () => fetchCourses(id),
+      staleTime: 0,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      refetchOnMount: true,
+      enabled: !!id,
+    })),
+  }) as UseQueryResult<any[], Error>[];
+
+  const isLoading = queries.some((q) => q.isLoading);
+  const isError = queries.some((q) => q.isError);
+  const data = queries.flatMap((q) => q.data || []);
+
+  return { data, isLoading, isError };
 }

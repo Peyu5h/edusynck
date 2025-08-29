@@ -13,7 +13,7 @@ import {
 } from "~/components/ui/table";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent } from "~/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -24,6 +24,7 @@ import {
 } from "~/components/ui/select";
 import { useState } from "react";
 import { Eye } from "lucide-react";
+import { CoursesPageLoader } from "~/components/Loaders";
 
 interface Student {
   id: string;
@@ -34,9 +35,14 @@ interface Student {
 export default function StudentsPage() {
   const router = useRouter();
   const user = useSelector((state: any) => state.user.user);
+  const isLoading = useSelector((state: any) => state.user.isLoading); // Assuming you have this in your Redux store
   const taughtClasses = user?.taughtClasses || [];
   const [selectedClass, setSelectedClass] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  if (isLoading) {
+    return <CoursesPageLoader />;
+  }
 
   const students =
     selectedClass === "all"
@@ -56,14 +62,10 @@ export default function StudentsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-3xl font-bold">Students</h1>
-
+      <h1 className="mb-4 text-3xl font-light text-text">Manage Students</h1>
       <Card>
-        <CardHeader>
-          <CardTitle>Manage Students</CardTitle>
-        </CardHeader>
         <CardContent>
-          <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row">
+          <div className="my-6 flex flex-col justify-between gap-4 md:flex-row">
             <div className="w-full md:w-1/2">
               <Input
                 placeholder="Search students..."

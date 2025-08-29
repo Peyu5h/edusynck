@@ -174,7 +174,6 @@ export default function UserProfilePage() {
 
   return (
     <div className="h-screen overflow-hidden bg-background">
-      {/* Header with Back Button */}
       <div className="flex items-center gap-4 border-b bg-card px-6 py-4">
         <Button
           variant="outline"
@@ -364,7 +363,7 @@ export default function UserProfilePage() {
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2">
                 <Activity className="h-5 w-5 text-primary" />
-                Activity Heatmap
+                Activity map
               </CardTitle>
               <CardDescription>
                 Your learning activity over the past year

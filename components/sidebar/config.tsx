@@ -110,14 +110,7 @@ export const NavItems = (userRole?: string, pathname: string = "") => {
       position: "top",
       roles: ["CLASS_TEACHER", "ADMIN"],
     },
-    {
-      name: "Assignments",
-      href: "/teacher/assignments",
-      icon: <CreditCard size={20} />,
-      active: isNavItemActive("/teacher/assignments"),
-      position: "top",
-      roles: ["CLASS_TEACHER", "ADMIN"],
-    },
+
     {
       name: "Quizzes",
       href: "/teacher/quizzes",

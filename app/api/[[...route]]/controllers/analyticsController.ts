@@ -25,7 +25,6 @@ export const saveWrongAnswers = async (c: Context) => {
       );
     }
 
-    // Allow empty array (just log it)
     if (wrongAnswers.length === 0) {
       console.log("Received empty wrong answers array for user:", userId);
       return c.json(
@@ -38,7 +37,6 @@ export const saveWrongAnswers = async (c: Context) => {
       );
     }
 
-    // Verify user exists
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -53,10 +51,8 @@ export const saveWrongAnswers = async (c: Context) => {
       );
     }
 
-    // Create wrong answers records
     const createdWrongAnswers = await Promise.all(
       wrongAnswers.map(async (answer) => {
-        // Sanitize data to prevent errors
         const sanitizedAnswer = {
           userId,
           question: String(answer.question || "").slice(0, 500), // Limit length
@@ -99,10 +95,6 @@ export const saveWrongAnswers = async (c: Context) => {
   }
 };
 
-/**
- * Get wrong answers by user ID
- * @route GET /api/analytics/wrong-answers/:userId
- */
 export const getWrongAnswersByUser = async (c: Context) => {
   try {
     const userId = c.req.param("userId");
@@ -117,7 +109,6 @@ export const getWrongAnswersByUser = async (c: Context) => {
       );
     }
 
-    // Verify user exists
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -131,8 +122,6 @@ export const getWrongAnswersByUser = async (c: Context) => {
         404,
       );
     }
-
-    // Get wrong answers for the user
     const wrongAnswers = await prisma.wrongAnswer.findMany({
       where: { userId },
       orderBy: { timestamp: "desc" },

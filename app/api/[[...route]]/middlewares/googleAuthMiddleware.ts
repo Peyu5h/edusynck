@@ -1,6 +1,6 @@
 import { Context, Next } from "hono";
 import { google, Auth } from "googleapis";
-import { prisma } from "~/lib/prisma"; 
+import { prisma } from "~/lib/prisma";
 
 export let cachedTokens: any = null;
 
@@ -25,9 +25,6 @@ export async function updateCachedTokens(tokens: any) {
     });
     if (dbTokens) {
       cachedTokens = dbTokens.tokens;
-      console.log("Loaded auth tokens from DB");
-    } else {
-      console.log("No googleAuthTokens found in DB");
     }
   } catch (error) {
     console.warn("Could not load tokens from DB:", error);
@@ -53,7 +50,6 @@ function getOAuth2Client() {
 
 async function refreshAccessToken(oAuth2Client: Auth.OAuth2Client) {
   if (cachedTokens) {
-    console.log("Using cached tokens...");
     oAuth2Client.setCredentials(cachedTokens);
 
     try {
@@ -62,40 +58,33 @@ async function refreshAccessToken(oAuth2Client: Auth.OAuth2Client) {
         (oAuth2Client.credentials.expiry_date &&
           Date.now() >= oAuth2Client.credentials.expiry_date)
       ) {
-        console.log("Token expired, refreshing...");
-        const { credentials: newTokens } = await oAuth2Client.refreshAccessToken();
+        const { credentials: newTokens } =
+          await oAuth2Client.refreshAccessToken();
         await updateCachedTokens(newTokens);
         oAuth2Client.setCredentials(newTokens);
-        console.log("Token refreshed successfully");
-      } else {
-        console.log("Token is still valid");
       }
     } catch (error) {
-      console.error("Unable to refresh access token:", error);
       throw new Error("reauthorize");
     }
   } else {
-    console.error("No cached tokens available");
     throw new Error("Authorize by visiting /auth");
   }
 }
 
 export const googleAuthMiddleware = async (c: Context, next: Next) => {
   try {
-    console.log("Google Auth middleware starting...");
     const oAuth2Client = getOAuth2Client();
     await refreshAccessToken(oAuth2Client);
     c.set("googleAuth", oAuth2Client);
-    console.log("Google Auth middleware successful");
     await next();
   } catch (error: unknown) {
-    console.error("Google Auth Middleware Error:", error);
     if (error instanceof Error) {
       if (error.message === "Authorize by visiting /auth") {
         return c.json(
           {
             error: "Authorization required",
-            message: "Authorize by visiting /auth",
+            message: "Authorize by visiting /api/admin/auth",
+            authUrl: "/api/admin/auth",
           },
           401,
         );
@@ -103,7 +92,8 @@ export const googleAuthMiddleware = async (c: Context, next: Next) => {
         return c.json(
           {
             error: "Token expired",
-            message: "Please reauthorize by visiting /auth",
+            message: "Please reauthorize by visiting /api/admin/auth",
+            authUrl: "/api/admin/auth",
           },
           401,
         );

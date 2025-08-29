@@ -20,14 +20,6 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
     }
   }, [isTeacher, isLoading, router]);
 
-  if (isLoading) {
-    return (
-      <div className="flex h-[80vh] items-center justify-center">
-        <p>Loading teacher dashboard...</p>
-      </div>
-    );
-  }
-
   if (!isTeacher && !isLoading) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
@@ -48,7 +40,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
           <TeacherNavBar />
         </div>
         <div className="scrollbar h-full flex-1 overflow-y-auto p-4">
-          <div className="container mx-auto py-8">{children}</div>
+          {children}
         </div>
       </div>
     </div>

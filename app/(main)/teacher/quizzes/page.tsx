@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { Button } from "~/components/ui/button";
 import {
@@ -9,8 +9,6 @@ import {
   Timer,
   FileCheck,
   Calendar,
-  Settings,
-  Loader2,
   RefreshCcw,
 } from "lucide-react";
 import { Input } from "~/components/ui/input";
@@ -26,9 +24,9 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import axios from "axios";
-import { toast } from "~/components/ui/use-toast";
 import { useTeacherQuizzes } from "~/hooks/useQuizData";
+import { useCoursesForClasses } from "~/hooks/useGetCourses";
+import { StudentQuizzesLoader } from "~/components/Loaders";
 
 interface Quiz {
   id: string;
@@ -53,11 +51,17 @@ export default function QuizzesPage() {
   const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
 
   const user = useSelector((state: any) => state.user.user);
-  const courses = user?.taughtClasses
-    ? user.taughtClasses.flatMap((cls: any) => cls.courses || [])
-    : [];
+  const teacherClassIds: string[] = useMemo(
+    () =>
+      user?.taughtClasses
+        ? user.taughtClasses.map((cls: any) => cls.id).filter(Boolean)
+        : [],
+    [user?.taughtClasses],
+  );
 
-  // Use React Query for data fetching
+  const { data: fetchedCourses = [], isLoading: isLoadingCourses } =
+    useCoursesForClasses(teacherClassIds);
+
   const {
     data: quizzesData,
     isLoading,
@@ -68,24 +72,22 @@ export default function QuizzesPage() {
   const quizzes = quizzesData?.success ? quizzesData.data : quizzesData || [];
 
   useEffect(() => {
-    if (courses.length > 0 && !selectedCourseId) {
-      setSelectedCourseId(courses[0].id);
+    if (!selectedCourseId && fetchedCourses.length > 0) {
+      setSelectedCourseId(fetchedCourses[0].id);
     }
-  }, [courses]);
+  }, [fetchedCourses, selectedCourseId]);
 
-  // Update filtered quizzes when data or search changes
   useEffect(() => {
     if (searchQuery.trim() === "") {
       setFilteredQuizzes(quizzes);
     } else {
-      const filtered = quizzes.filter((quiz) =>
+      const filtered = quizzes.filter((quiz: any) =>
         quiz.title.toLowerCase().includes(searchQuery.toLowerCase()),
       );
       setFilteredQuizzes(filtered);
     }
   }, [searchQuery, quizzes]);
 
-  // Refresh function
   const handleRefresh = () => {
     refetchQuizzes();
   };
@@ -120,9 +122,9 @@ export default function QuizzesPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Quizzes</h1>
+    <div className="scrollbar container mx-auto h-full overflow-y-auto rounded-xl bg-bground2 pt-8">
+      <div className="flex items-center justify-between">
+        <h1 className="pb-4 pt-2 text-3xl font-light text-text">Quizzes</h1>
         <Link href="/teacher/quizzes/create">
           <Button className="flex items-center gap-2">
             <PlusIcon className="h-4 w-4" />
@@ -131,50 +133,48 @@ export default function QuizzesPage() {
         </Link>
       </div>
 
-      <div className="mb-6">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-            <Input
-              placeholder="Search quizzes..."
-              className="pl-10"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            {courses.length > 0 && (
-              <select
-                className="rounded-md border p-2"
-                value={selectedCourseId || ""}
-                onChange={(e) => setSelectedCourseId(e.target.value)}
-              >
-                {courses.map((course: any) => (
-                  <option key={course.id} value={course.id}>
-                    {course.name}
-                  </option>
-                ))}
-              </select>
-            )}
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleRefresh}
-              disabled={isFetching}
-              className="bg-accent"
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+          <Input
+            placeholder="Search quizzes..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          {isLoadingCourses ? null : fetchedCourses.length > 0 ? (
+            <select
+              className="rounded-md border p-2"
+              value={selectedCourseId || ""}
+              onChange={(e) => setSelectedCourseId(e.target.value)}
             >
-              <RefreshCcw
-                className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
-              />
-            </Button>
-          </div>
+              {fetchedCourses.map((course: any) => (
+                <option key={course.id} value={course.id}>
+                  {course.name}
+                </option>
+              ))}
+            </select>
+          ) : null}
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isFetching}
+            className="bg-accent"
+          >
+            <RefreshCcw
+              className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+            />
+          </Button>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
+        <StudentQuizzesLoader />
       ) : (
         <Tabs defaultValue="all">
           <TabsList className="mb-6">
@@ -218,10 +218,10 @@ export default function QuizzesPage() {
     }
 
     return (
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 pb-8 md:grid-cols-2 lg:grid-cols-3">
         {quizzes.map((quiz) => (
           <Link key={quiz.id} href={`/teacher/quizzes/${quiz.id}/leaderboard`}>
-            <Card className="h-full cursor-pointer transition-shadow hover:shadow-md">
+            <Card className="h-full cursor-pointer transition-shadow hover:border-gray-600 hover:shadow-md">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="line-clamp-1">{quiz.title}</CardTitle>
@@ -259,13 +259,10 @@ export default function QuizzesPage() {
               </CardContent>
               <CardFooter className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-md text-muted-foreground">
                     {quiz._count.studentAttempts} attempts
                   </span>
                 </div>
-                <Button variant="ghost" size="sm">
-                  <Settings className="h-4 w-4" />
-                </Button>
               </CardFooter>
             </Card>
           </Link>

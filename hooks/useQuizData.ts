@@ -133,3 +133,72 @@ export const useTeacherQuizzes = (courseId: string) => {
     staleTime: 1 * 60 * 1000, // 1 minute - shorter for teachers to see updates faster
   });
 };
+
+// Teacher active quizzes with attempt counts hook
+export const useTeacherActiveQuizzes = (courses: any[]) => {
+  return useQuery({
+    queryKey: ["teacher-active-quizzes", courses.map((c) => c.id).sort()],
+    queryFn: async () => {
+      if (!courses.length) return [];
+
+      // Fetch active quizzes for all courses
+      const promises = courses.map(async (course) => {
+        try {
+          const response = await axios.get(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/course/${course.id}`,
+          );
+          const quizzes = response.data?.success
+            ? response.data.data
+            : response.data || [];
+
+          // Filter only active quizzes and add attempt counts
+          const activeQuizzes = quizzes.filter(
+            (quiz: any) => quiz.status === "ACTIVE",
+          );
+
+          // Fetch attempt counts for each active quiz
+          const quizzesWithCounts = await Promise.all(
+            activeQuizzes.map(async (quiz: any) => {
+              try {
+                const progressResponse = await axios.get(
+                  `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/${quiz.id}/progress`,
+                );
+                const progress = progressResponse.data?.success
+                  ? progressResponse.data.progress
+                  : null;
+
+                return {
+                  ...quiz,
+                  _count: {
+                    ...quiz._count,
+                    attempts: progress?.attempted || 0,
+                    completed: progress?.completed || 0,
+                  },
+                };
+              } catch (error) {
+                console.error(
+                  `Error fetching progress for quiz ${quiz.id}:`,
+                  error,
+                );
+                return quiz;
+              }
+            }),
+          );
+
+          return quizzesWithCounts;
+        } catch (error) {
+          console.error(
+            `Error fetching quizzes for course ${course.id}:`,
+            error,
+          );
+          return [];
+        }
+      });
+
+      const results = await Promise.all(promises);
+      return results.flat();
+    },
+    enabled: courses.length > 0,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+};

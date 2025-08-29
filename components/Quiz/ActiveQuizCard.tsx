@@ -54,7 +54,7 @@ export default function ActiveQuizCard({
   return (
     <Card
       key={quiz.id}
-      className="h-full overflow-hidden rounded-xl border bg-card shadow-sm transition hover:shadow-md"
+      className="h-full overflow-hidden rounded-xl border bg-card shadow-sm transition hover:border-gray-600 hover:shadow-md"
     >
       <CardHeader>
         <div className="flex items-center justify-between">
