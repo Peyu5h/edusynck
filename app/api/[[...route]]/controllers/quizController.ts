@@ -1,4 +1,5 @@
 import { Context } from "hono";
+import { Prisma } from "@prisma/client";
 import { prisma } from "~/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
@@ -182,7 +183,28 @@ export const getQuizzesByCourse = async (c: Context) => {
       });
     }
   } catch (error) {
-    console.error("Error fetching quizzes:", error);
+    if (error instanceof Prisma.PrismaClientInitializationError) {
+      console.error(
+        "Database initialization error while fetching quizzes:",
+        error.message,
+      );
+      return c.json(
+        {
+          success: false,
+          message: "Service unavailable",
+        },
+        503,
+      );
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.error(
+        "Prisma known request error (quizzes by course):",
+        error.code,
+        error.meta,
+      );
+    } else {
+      console.error("Error fetching quizzes:", error);
+    }
     return c.json(
       {
         success: false,
