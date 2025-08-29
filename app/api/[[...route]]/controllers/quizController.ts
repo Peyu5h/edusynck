@@ -113,20 +113,74 @@ export const getQuizzesByCourse = async (c: Context) => {
       );
     }
 
-    const quizzes = await prisma.quiz.findMany({
-      where: { courseId },
-      include: {
-        _count: {
-          select: { questions: true, studentAttempts: true },
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      select: { id: true, name: true },
+    });
+    if (!course) {
+      return c.json(
+        {
+          success: false,
+          message: "Course not found",
         },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+        404,
+      );
+    }
 
-    return c.json({
-      success: true,
-      data: quizzes,
-    });
+    try {
+      const quizzes = await prisma.quiz.findMany({
+        where: { courseId },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          status: true,
+          startTime: true,
+          endTime: true,
+          duration: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: {
+            select: { questions: true, studentAttempts: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return c.json({
+        success: true,
+        data: quizzes,
+      });
+    } catch (innerError) {
+      console.error(
+        "Error fetching quizzes with counts, retrying simpler query:",
+        innerError,
+      );
+      const quizzes = await prisma.quiz.findMany({
+        where: { courseId },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          status: true,
+          startTime: true,
+          endTime: true,
+          duration: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return c.json({
+        success: true,
+        data: quizzes.map((q) => ({
+          ...q,
+          _count: { questions: 0, studentAttempts: 0 },
+        })),
+        note: "Counts unavailable; returned zeros",
+      });
+    }
   } catch (error) {
     console.error("Error fetching quizzes:", error);
     return c.json(
