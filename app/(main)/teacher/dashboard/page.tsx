@@ -137,7 +137,7 @@ export default function TeacherDashboardPage() {
     return <Badge variant="default">Active</Badge>;
   };
 
-  if (!user) {
+  if (!user || isLoadingQuizzes) {
     return <TeacherDashboardLoader />;
   }
 

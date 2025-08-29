@@ -9,6 +9,12 @@ export async function middleware(request: NextRequest) {
 
   console.log("Middleware: Checking path:", pathname);
 
+  if (request.nextUrl.hostname === "edysynck.peyush.in") {
+    return NextResponse.redirect(
+      new URL(request.nextUrl.pathname, "https://edusynck.peyush.in"),
+    );
+  }
+
   const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route),
   );

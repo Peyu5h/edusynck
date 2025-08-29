@@ -102,10 +102,7 @@ const CreateQuizPage = () => {
         }
         delete (payload as any).isTimeLimited;
 
-        const response = await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz`,
-          payload,
-        );
+        const response = await axios.post(`/api/quiz`, payload);
 
         if (response.data.success) {
           toast({ title: "Quiz created successfully" });
@@ -138,10 +135,9 @@ const CreateQuizPage = () => {
 
     setIsGeneratingQuestions(true);
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/quiz/generate-questions`,
-        { content: aiContent },
-      );
+      const response = await axios.post(`/api/quiz/generate-questions`, {
+        content: aiContent,
+      });
 
       if (response.data.success) {
         const drafted: Question[] = response.data.data;

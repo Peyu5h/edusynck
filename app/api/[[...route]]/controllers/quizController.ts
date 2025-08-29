@@ -2,8 +2,6 @@ import { Context } from "hono";
 import { prisma } from "~/lib/prisma";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY as string);
-
 export const createQuiz = async (c: Context) => {
   try {
     const body = await c.req.json();
@@ -764,6 +762,12 @@ export const getStudentQuizAttempts = async (c: Context) => {
 
 export async function generateQuestionsWithAI(content: string) {
   try {
+    const apiKey = process.env.GOOGLE_AI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GOOGLE_AI_API_KEY is not configured");
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
       model: "gemini-2.0-flash",
     });
