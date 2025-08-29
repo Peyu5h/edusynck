@@ -279,6 +279,7 @@ enum UserRole {
 }
 
 enum QuizStatus {
+  DRAFT
   ACTIVE
   COMPLETED
   CANCELLED
